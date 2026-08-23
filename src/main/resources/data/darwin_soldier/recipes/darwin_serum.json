@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "minecraft:diamond"
+    },
+    {
+      "item": "minecraft:golden_apple"
+    },
+    {
+      "item": "minecraft:totem_of_undying"
+    },
+    {
+      "type": "forge:partial_nbt",
+      "item": "minecraft:potion",
+      "nbt": "{Potion:\"minecraft:strong_strength\"}"
+    }
+  ],
+  "result": {
+    "item": "darwin_soldier:darwin_serum",
+    "count": 1
+  }
+}

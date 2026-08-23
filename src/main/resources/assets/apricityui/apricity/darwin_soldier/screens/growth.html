@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="aui-font-mode" content="mc">
+  <meta name="aui-viewport" content="mode=browser,zoom=1,min-zoom=1,max-zoom=1,user-scalable=false">
+  <meta name="aui-mouse-events" content="intercept">
+  <title>Darwin Soldier Growth</title>
+  <link rel="stylesheet" href="/apricityui/theme/ore/ore.css">
+  <link rel="stylesheet" href="../styles/darwin.css">
+</head>
+<body class="ore-theme darwin-screen darwin-growth-screen">
+  <header class="darwin-header darwin-command-header">
+    <div class="darwin-brand-lockup">
+      <span class="darwin-brand-kicker"><translation>screen.darwin_soldier.aui.command_console</translation></span>
+      <span class="darwin-brand-title"><translation>screen.darwin_soldier.growth</translation></span>
+    </div>
+    <div class="darwin-header-actions">
+      <span id="growth-header-status" class="badge badge-warning"></span>
+      <button class="button button-tertiary button-small" type="button" data-action="close"><translation>gui.done</translation></button>
+    </div>
+  </header>
+  <main class="container-fluid darwin-main darwin-growth-main">
+    <div id="growth-metrics" class="darwin-status-strip"></div>
+    <div id="growth-locked" class="alert alert-danger hidden"><translation>screen.darwin_soldier.locked</translation></div>
+    <div id="growth-content" class="darwin-growth-workspace">
+      <section class="darwin-growth-left stack">
+        <article class="card card-accent-green">
+          <div class="card-header darwin-card-title"><translation>screen.darwin_soldier.aui.allocation</translation></div>
+          <div class="card-body">
+            <div id="allocation-fields" class="darwin-fields"></div>
+          </div>
+          <div class="card-footer split">
+            <span id="allocation-remaining" class="text-muted"></span>
+            <button id="allocation-confirm" class="button" type="button" data-action="confirm-allocation"><translation>screen.darwin_soldier.confirm</translation></button>
+          </div>
+        </article>
+      </section>
+      <section class="darwin-ability-workspace">
+        <div class="card card-accent-purple darwin-ability-card">
+          <div class="card-header darwin-card-title"><translation>screen.darwin_soldier.ability_panel</translation></div>
+          <div class="card-body">
+          <div id="ability-tabs" class="darwin-skill-grid" role="tablist"></div>
+          <div class="darwin-ability-detail-shell">
+            <div id="ability-detail" class="darwin-ability-copy"></div>
+          </div>
+          </div>
+        </div>
+        <article class="card card-accent-gold darwin-intel-card">
+          <div class="card-header darwin-card-title"><translation>screen.darwin_soldier.aui.combat_intel</translation></div>
+          <div id="growth-summary" class="card-body darwin-intel-grid"></div>
+        </article>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
