@@ -2,7 +2,7 @@ package com.kltyton.darwin_soldier.client.growth.targeting;
 
 import com.kltyton.darwin_soldier.config.DarwinConfig;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.List;
 import java.util.Locale;
@@ -13,7 +13,7 @@ final class SuperPerceptionTargetSettings {
     private SuperPerceptionTargetSettings() {
     }
 
-    static void toggle(ForgeConfigSpec.BooleanValue value) {
+    static void toggle(ModConfigSpec.BooleanValue value) {
         value.set(!value.get());
         value.save();
     }

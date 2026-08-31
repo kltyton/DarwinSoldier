@@ -1,9 +1,7 @@
 package com.kltyton.darwin_soldier.data;
 
-import com.electronwill.nightconfig.core.CommentedConfig;
 import com.kltyton.darwin_soldier.config.DarwinConfig;
 import net.minecraft.nbt.CompoundTag;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -11,13 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PlayerGrowthDataTest {
-    @BeforeAll
-    static void loadDefaultConfig() {
-        CommentedConfig config = CommentedConfig.inMemory();
-        DarwinConfig.SPEC.correct(config);
-        DarwinConfig.SPEC.setConfig(config);
-    }
-
     @Test
     void counterKillReserveRestorationDoesNotResetRecoveryTimer() {
         PlayerGrowthData data = new PlayerGrowthData();

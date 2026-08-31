@@ -6,7 +6,7 @@ import com.sighs.apricityui.init.Document;
 import com.sighs.apricityui.init.Element;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.List;
 
@@ -128,9 +128,9 @@ public final class TargetingAuiScreen extends InteractiveAuiScreen {
         PETS("screen.darwin_soldier.targets.filter_pets", DarwinConfig.SUPER_PERCEPTION_FILTER_PETS);
 
         private final String translationKey;
-        private final ForgeConfigSpec.BooleanValue value;
+        private final ModConfigSpec.BooleanValue value;
 
-        Filter(String translationKey, ForgeConfigSpec.BooleanValue value) {
+        Filter(String translationKey, ModConfigSpec.BooleanValue value) {
             this.translationKey = translationKey;
             this.value = value;
         }

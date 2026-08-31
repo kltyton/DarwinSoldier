@@ -3,7 +3,7 @@ package com.kltyton.darwin_soldier.combat;
 import com.kltyton.darwin_soldier.Darwin_soldier;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -20,7 +20,7 @@ public final class DarwinDamageTypes {
     private DarwinDamageTypes() {
     }
 
-    public static void bootstrap(BootstapContext<DamageType> context) {
+    public static void bootstrap(BootstrapContext<DamageType> context) {
         context.register(HUNTING_SHOCK, new DamageType("darwinHuntingShock", DamageScaling.NEVER, 0.0F));
         context.register(INTERNAL_INJURY, new DamageType("darwinInternalInjury", DamageScaling.NEVER, 0.0F));
         context.register(MINIMUM_DAMAGE_CORRECTION, new DamageType("darwinMinimumDamage", DamageScaling.NEVER, 0.0F));
@@ -47,6 +47,7 @@ public final class DarwinDamageTypes {
     }
 
     private static ResourceKey<DamageType> key(String path) {
-        return ResourceKey.create(Registries.DAMAGE_TYPE, new ResourceLocation(Darwin_soldier.MODID, path));
+        return ResourceKey.create(Registries.DAMAGE_TYPE,
+                ResourceLocation.fromNamespaceAndPath(Darwin_soldier.MODID, path));
     }
 }

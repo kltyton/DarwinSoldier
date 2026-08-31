@@ -10,6 +10,8 @@ import com.kltyton.darwin_soldier.diagnostic.RuntimeDiagnostics;
 import com.kltyton.darwin_soldier.network.ModNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
@@ -41,19 +43,17 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.ForgeMod;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.UUID;
 
 public final class GrowthAbilities {
     private static final long BATTLE_INSTINCT_COUNTER_WINDOW_TICKS = 2L;
-    private static final UUID ARMOR_PIERCE_MODIFIER_ID = UUID.fromString("313ca6b2-0996-45a7-a38f-a935be286c55");
+    private static final ResourceLocation ARMOR_PIERCE_MODIFIER_ID =
+            ResourceLocation.withDefaultNamespace("313ca6b2-0996-45a7-a38f-a935be286c55");
     private static final DustParticleOptions STRESS_SHOCKWAVE_PARTICLE = new DustParticleOptions(new Vector3f(0.95F, 0.95F, 0.95F), 1.25F);
     private static final int[][] BATTLE_INSTINCT_DODGE_OFFSETS = {
             {-1, -1}, {0, -1}, {1, -1},
@@ -167,7 +167,7 @@ public final class GrowthAbilities {
 
         if (data.isBattleInstinctCounterEnabled()) {
             boolean counterInRange = isWithinBattleInstinctCounterRange(player, attacker);
-            double counterRange = player.getAttributeValue(ForgeMod.ENTITY_REACH.get())
+            double counterRange = player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE)
                     + DarwinConfig.BATTLE_INSTINCT_COUNTER_RANGE_PADDING.get();
             double counterDistance = Math.sqrt(distanceToBoxSqr(player.getEyePosition(), attacker.getBoundingBox()));
             RuntimeDiagnostics.info("battle_instinct_counter_check", "player=" + player.getGameProfile().getName()
@@ -258,9 +258,8 @@ public final class GrowthAbilities {
 
         armor.addTransientModifier(new AttributeModifier(
                 ARMOR_PIERCE_MODIFIER_ID,
-                "Darwin soldier armor pierce",
                 -effectivePierce,
-                AttributeModifier.Operation.ADDITION
+                AttributeModifier.Operation.ADD_VALUE
         ));
         attacker.getServer().execute(() -> clearArmorPiercingModifier(target));
     }
@@ -460,7 +459,7 @@ public final class GrowthAbilities {
                     player.getX(), y, player.getZ(),
                     explosionParticles, 0.0D, 0.0D, 0.0D, 0.0D);
         }
-        level.playSound(null, player.blockPosition(), SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS, 0.8F, 1.05F);
+        level.playSound(null, player.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 0.8F, 1.05F);
 
         int shockwaveParticles = DarwinConfig.STRESS_VISUAL_SHOCKWAVE_PARTICLES.get();
         if (shockwaveParticles <= 0) {
@@ -492,7 +491,7 @@ public final class GrowthAbilities {
     }
 
     private static boolean isWithinBattleInstinctCounterRange(ServerPlayer player, LivingEntity target) {
-        double range = player.getAttributeValue(ForgeMod.ENTITY_REACH.get())
+        double range = player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE)
                 + DarwinConfig.BATTLE_INSTINCT_COUNTER_RANGE_PADDING.get();
         return distanceToBoxSqr(player.getEyePosition(), target.getBoundingBox()) <= range * range;
     }
@@ -542,14 +541,14 @@ public final class GrowthAbilities {
         if (entity == null) {
             return "null";
         }
-        ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType());
+        ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
         return (id == null ? entity.getType().toString() : id.toString()) + "#" + entity.getId();
     }
 
     private static void removeHarmfulEffects(ServerPlayer player) {
-        List<MobEffect> toRemove = player.getActiveEffects().stream()
+        List<Holder<MobEffect>> toRemove = player.getActiveEffects().stream()
                 .map(MobEffectInstance::getEffect)
-                .filter(effect -> effect.getCategory() == MobEffectCategory.HARMFUL)
+                .filter(effect -> effect.value().getCategory() == MobEffectCategory.HARMFUL)
                 .toList();
         toRemove.forEach(player::removeEffect);
     }
@@ -582,7 +581,7 @@ public final class GrowthAbilities {
         if (target instanceof OwnableEntity ownable && player.getUUID().equals(ownable.getOwnerUUID())) {
             return true;
         }
-        ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(target.getType());
+        ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(target.getType());
         if (id == null) {
             return false;
         }
@@ -612,7 +611,7 @@ public final class GrowthAbilities {
             return new AdaptationTarget("player:" + uuid, player.getGameProfile().getName(), uuid, true);
         }
         if (entity instanceof LivingEntity living) {
-            ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(living.getType());
+            ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(living.getType());
             if (id == null) {
                 return null;
             }

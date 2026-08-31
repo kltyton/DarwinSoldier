@@ -1,15 +1,15 @@
 package com.kltyton.darwin_soldier.network;
 
-import com.kltyton.darwin_soldier.client.hud.growth.GrowthGainHud;
 import com.kltyton.darwin_soldier.growth.notification.GrowthGainReason;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-import java.util.function.Supplier;
-
-public record GrowthGainNotificationPacket(double amount, GrowthGainReason reason) {
+public record GrowthGainNotificationPacket(double amount, GrowthGainReason reason) implements CustomPacketPayload {
+    public static final Type<GrowthGainNotificationPacket> TYPE = ModNetwork.type("growth_gain_notification");
+    public static final StreamCodec<RegistryFriendlyByteBuf, GrowthGainNotificationPacket> STREAM_CODEC =
+            ModNetwork.codec(GrowthGainNotificationPacket::encode, GrowthGainNotificationPacket::decode);
     public static void encode(GrowthGainNotificationPacket packet, FriendlyByteBuf buffer) {
         buffer.writeDouble(packet.amount);
         buffer.writeEnum(packet.reason.type());
@@ -22,8 +22,8 @@ public record GrowthGainNotificationPacket(double amount, GrowthGainReason reaso
         return new GrowthGainNotificationPacket(amount, new GrowthGainReason(type, buffer.readDouble()));
     }
 
-    public static void handle(GrowthGainNotificationPacket packet, Supplier<NetworkEvent.Context> context) {
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> GrowthGainHud.accept(packet));
-        context.get().setPacketHandled(true);
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 }

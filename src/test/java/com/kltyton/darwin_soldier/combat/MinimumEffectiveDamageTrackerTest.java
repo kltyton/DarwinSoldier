@@ -1,7 +1,7 @@
 package com.kltyton.darwin_soldier.combat;
 
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.common.util.FakePlayer;
+import net.neoforged.neoforge.common.util.FakePlayer;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;

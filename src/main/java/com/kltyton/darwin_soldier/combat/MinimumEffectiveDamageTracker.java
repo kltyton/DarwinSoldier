@@ -14,8 +14,8 @@ import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.common.util.FakePlayer;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -108,14 +108,14 @@ public final class MinimumEffectiveDamageTracker {
         return true;
     }
 
-    public static boolean forceCorrectionFinalDamage(LivingDamageEvent event) {
+    public static boolean forceCorrectionFinalDamage(LivingDamageEvent.Pre event) {
         CorrectionContext context = ACTIVE_CORRECTION.get();
         if (context == null || !event.getSource().is(DarwinDamageTypes.MINIMUM_DAMAGE_CORRECTION)
                 || !context.targetId.equals(event.getEntity().getUUID())) {
             return false;
         }
         event.getEntity().setAbsorptionAmount(context.absorptionBefore);
-        event.setAmount(context.requestedDamage);
+        event.setNewDamage(context.requestedDamage);
         return true;
     }
 

@@ -3,13 +3,12 @@ package com.kltyton.darwin_soldier.mixin.client;
 import com.kltyton.darwin_soldier.nutrition.NutritionFood;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.ghen.thirst.foundation.common.capability.IThirst;
-import dev.ghen.thirst.foundation.common.capability.ModCapabilities;
+import dev.ghen.thirst.foundation.common.capability.ModAttachment;
 import dev.ghen.thirst.foundation.config.ClientConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
@@ -19,8 +18,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Adapts Thirst Was Taken's open-source 1.20.1 thirst-bar renderer with dynamic capacity rows.
- * Original implementation: https://github.com/ghen-git/Thirst-Mod/blob/1.20.1/src/main/java/dev/ghen/thirst/foundation/gui/ThirstBarRenderer.java
+ * Adapts Thirst Was Taken 2.1.5's thirst-bar renderer with dynamic capacity rows.
  */
 @Pseudo
 @Mixin(targets = "dev.ghen.thirst.foundation.gui.ThirstBarRenderer", remap = false)
@@ -35,10 +33,6 @@ public abstract class ThirstBarRendererMixin {
     public static ResourceLocation THIRST_ICONS;
 
     @Shadow
-    @Final
-    public static ResourceLocation MC_ICONS;
-
-    @Shadow
     private static Minecraft minecraft;
 
     @Shadow
@@ -46,12 +40,12 @@ public abstract class ThirstBarRendererMixin {
     protected static RandomSource random;
 
     @Inject(
-            method = "render(Lnet/minecraftforge/client/gui/overlay/ForgeGui;IILnet/minecraft/client/gui/GuiGraphics;)V",
+            method = "render(IILnet/minecraft/client/gui/GuiGraphics;)V",
             at = @At("HEAD"),
             cancellable = true,
             require = 0
     )
-    private static void darwinSoldier$renderExpandedCapacity(ForgeGui gui, int width, int height,
+    private static void darwinSoldier$renderExpandedCapacity(int width, int height,
                                                               GuiGraphics guiGraphics, CallbackInfo callback) {
         if (minecraft.player == null) {
             return;
@@ -64,7 +58,7 @@ public abstract class ThirstBarRendererMixin {
 
         minecraft.getProfiler().push("thirst");
         if (PLAYER_THIRST == null || minecraft.player.tickCount % 40 == 0) {
-            PLAYER_THIRST = minecraft.player.getCapability(ModCapabilities.PLAYER_THIRST).orElse(null);
+            PLAYER_THIRST = minecraft.player.getData(ModAttachment.PLAYER_THIRST);
         }
         if (PLAYER_THIRST == null) {
             minecraft.getProfiler().pop();
@@ -75,10 +69,10 @@ public abstract class ThirstBarRendererMixin {
         RenderSystem.enableBlend();
         RenderSystem.setShaderTexture(0, THIRST_ICONS);
         int left = width / 2 + 91 + ClientConfig.THIRST_BAR_X_OFFSET.get();
-        int top = height - gui.rightHeight + ClientConfig.THIRST_BAR_Y_OFFSET.get();
+        int top = height - minecraft.gui.rightHeight + ClientConfig.THIRST_BAR_Y_OFFSET.get();
         int iconCount = Math.min(MAX_RENDERED_ICONS, 1 + (maximum - 1) / 2);
         int rowCount = 1 + (iconCount - 1) / ICONS_PER_ROW;
-        gui.rightHeight += rowCount * 10;
+        minecraft.gui.rightHeight += rowCount * 10;
 
         int level = Math.max(0, Math.min(maximum, PLAYER_THIRST.getThirst()));
         long rawJitterPeriod = (long) level * 3L + 1L;
@@ -89,7 +83,7 @@ public abstract class ThirstBarRendererMixin {
             int idx = i * 2 + 1;
             int x = left - column * 8 - 9;
             int y = top - row * 10;
-            if (PLAYER_THIRST.getQuenched() <= 0 && gui.getGuiTicks() % jitterPeriod == 0) {
+            if (PLAYER_THIRST.getQuenched() <= 0 && minecraft.gui.getGuiTicks() % jitterPeriod == 0) {
                 y += random.nextInt(3) - 1;
             }
 
@@ -102,7 +96,6 @@ public abstract class ThirstBarRendererMixin {
         }
 
         RenderSystem.disableBlend();
-        RenderSystem.setShaderTexture(0, MC_ICONS);
         minecraft.getProfiler().pop();
         callback.cancel();
     }

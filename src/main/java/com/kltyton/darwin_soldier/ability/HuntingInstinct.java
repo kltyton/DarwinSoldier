@@ -8,6 +8,7 @@ import com.kltyton.darwin_soldier.data.PlayerGrowthData;
 import com.kltyton.darwin_soldier.diagnostic.RuntimeDiagnostics;
 import com.kltyton.darwin_soldier.network.ModNetwork;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
@@ -159,13 +160,13 @@ public final class HuntingInstinct {
         data.endHuntingInstinct();
     }
 
-    private static void addMobilityEffect(ServerPlayer player, MobEffect effect, int duration, int level) {
+    private static void addMobilityEffect(ServerPlayer player, Holder<MobEffect> effect, int duration, int level) {
         if (level > 0) {
             player.addEffect(new MobEffectInstance(effect, duration, level - 1, false, false, true));
         }
     }
 
-    private static void removeOwnedEffect(ServerPlayer player, MobEffect effect, int level, long remaining) {
+    private static void removeOwnedEffect(ServerPlayer player, Holder<MobEffect> effect, int level, long remaining) {
         MobEffectInstance current = player.getEffect(effect);
         if (current != null && level > 0 && current.getAmplifier() == level - 1
                 && current.getDuration() <= remaining + 2L && !current.isAmbient()

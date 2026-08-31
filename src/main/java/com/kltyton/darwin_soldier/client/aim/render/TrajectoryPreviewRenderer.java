@@ -14,6 +14,7 @@ import com.kltyton.darwin_soldier.diagnostic.RuntimeDiagnostics;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.InteractionHand;
@@ -27,7 +28,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix4f;
 
 public final class TrajectoryPreviewRenderer {
@@ -49,7 +50,7 @@ public final class TrajectoryPreviewRenderer {
             return;
         }
         ItemStack mainHandItem = minecraft.player.getMainHandItem();
-        if (!TrajectoryFeaturePolicy.isEligibleWeapon(mainHandItem.isEdible())) {
+        if (!TrajectoryFeaturePolicy.isEligibleWeapon(mainHandItem.has(DataComponents.FOOD))) {
             TRAJECTORY_SHRINK.update(null, false, nowNanos);
             return;
         }
@@ -60,7 +61,7 @@ public final class TrajectoryPreviewRenderer {
         }
         boolean liveSupported = WeaponLaunchResolver.isSupported(mainHandItem);
         ProjectileLaunchState liveLaunch = WeaponLaunchResolver.resolve(
-                minecraft.player, mainHandItem, event.getPartialTick());
+                minecraft.player, mainHandItem, event.getPartialTick().getGameTimeDeltaPartialTick(false));
         boolean mainHandUse = minecraft.player.isUsingItem()
                 && minecraft.player.getUsedItemHand() == InteractionHand.MAIN_HAND;
         boolean supportedWeapon = liveLaunch != null || !liveSupported
@@ -77,7 +78,7 @@ public final class TrajectoryPreviewRenderer {
         }
 
         ProjectileLaunchState launch = liveLaunch == null
-                ? learnedFallback(minecraft, settings, event.getPartialTick())
+                ? learnedFallback(minecraft, settings, event.getPartialTick().getGameTimeDeltaPartialTick(false))
                 : liveLaunch;
         Vec3 origin = launch.origin();
         Vec3 velocity = launch.velocity();

@@ -7,6 +7,8 @@ import com.kltyton.darwin_soldier.client.aim.TrajectoryFeaturePolicy;
 import com.kltyton.darwin_soldier.diagnostic.RuntimeDiagnostics;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -14,7 +16,6 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,7 +51,7 @@ public final class ProjectileBallisticsTracker {
         if (minecraft.player == null || minecraft.level == null) {
             return;
         }
-        if (!TrajectoryFeaturePolicy.isEligibleWeapon(weapon.isEdible())
+        if (!TrajectoryFeaturePolicy.isEligibleWeapon(weapon.has(DataComponents.FOOD))
                 || WeaponLaunchResolver.isSupported(weapon)) {
             return;
         }
@@ -95,7 +96,7 @@ public final class ProjectileBallisticsTracker {
                     : null;
             if (mainHandUse && (!wasUsingItem || !Objects.equals(current, useWeapon))) {
                 useWeapon = current;
-                useWeaponEligible = TrajectoryFeaturePolicy.isEligibleWeapon(player.getUseItem().isEdible());
+                useWeaponEligible = TrajectoryFeaturePolicy.isEligibleWeapon(player.getUseItem().has(DataComponents.FOOD));
             } else if (!mainHandUse && wasUsingItem) {
                 useWeapon = null;
                 useWeaponEligible = false;
@@ -130,7 +131,7 @@ public final class ProjectileBallisticsTracker {
             if (!SEEN_PROJECTILES.add(projectile.getId())) {
                 continue;
             }
-            ResourceLocation type = ForgeRegistries.ENTITY_TYPES.getKey(projectile.getType());
+            ResourceLocation type = BuiltInRegistries.ENTITY_TYPE.getKey(projectile.getType());
             TRACKS.put(projectile.getId(), new SampleTrack(
                     pending.weaponId(),
                     type == null ? projectile.getType().toString() : type.toString(),

@@ -1,18 +1,17 @@
 package com.kltyton.darwin_soldier.network;
 
-import com.kltyton.darwin_soldier.client.ClientGrowthData;
 import com.kltyton.darwin_soldier.ability.NutritionAbilities;
 import com.kltyton.darwin_soldier.compat.thirst.ThirstCompat;
 import com.kltyton.darwin_soldier.config.DarwinConfig;
 import com.kltyton.darwin_soldier.data.AdaptationRecord;
 import com.kltyton.darwin_soldier.data.PlayerGrowthData;
-import com.kltyton.darwin_soldier.diagnostic.RuntimeDiagnostics;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 public record SyncGrowthDataPacket(
         boolean enabled,
@@ -52,7 +51,10 @@ public record SyncGrowthDataPacket(
         long huntingInstinctActiveUntil,
         long stressEvolutionCooldownUntil,
         List<AdaptationEntry> adaptationEntries
-) {
+) implements CustomPacketPayload {
+    public static final Type<SyncGrowthDataPacket> TYPE = ModNetwork.type("sync_growth_data");
+    public static final StreamCodec<RegistryFriendlyByteBuf, SyncGrowthDataPacket> STREAM_CODEC =
+            ModNetwork.codec(SyncGrowthDataPacket::encode, SyncGrowthDataPacket::decode);
     public static SyncGrowthDataPacket from(ServerPlayer player, PlayerGrowthData data) {
         return new SyncGrowthDataPacket(
                 data.isEnabled(),
@@ -180,21 +182,9 @@ public record SyncGrowthDataPacket(
         );
     }
 
-    public static void handle(SyncGrowthDataPacket packet, Supplier<NetworkEvent.Context> context) {
-        ClientGrowthData.update(packet);
-        RuntimeDiagnostics.infoRateLimited("sync-client", 1000L, "growth_sync_receive",
-                () -> "enabled=" + packet.enabled() + " totalPoints=" + packet.totalPoints()
-                        + " current=" + packet.healthPoints() + "/" + packet.attackPoints() + "/"
-                        + packet.defensePoints() + "/" + packet.perceptionPoints() + "/" + packet.nutrition().points()
-                        + " unlocks=" + packet.damageAdaptationUnlocked() + "/" + packet.huntingInstinctUnlocked()
-                        + "/" + packet.stressEvolutionUnlocked() + "/" + packet.superPerceptionUnlocked()
-                        + "/" + packet.battleInstinctUnlocked() + "/"
-                        + packet.nutrition().efficientMetabolismUnlocked() + "/"
-                        + packet.nutrition().nutritionFullnessUnlocked()
-                        + " features=" + packet.adaptationFeatureEnabled() + "/"
-                        + packet.huntingInstinctFeatureEnabled() + "/" + packet.stressEvolutionFeatureEnabled()
-                        + "/" + packet.battleInstinctFeatureEnabled() + "/" + packet.nutrition().featureEnabled()
-                        + " reserves=" + packet.battleInstinctReserves() + "/" + packet.battleInstinctMaxReserves());
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
     private static List<AdaptationEntry> decodeAdaptations(FriendlyByteBuf buffer) {

@@ -4,7 +4,7 @@ import com.kltyton.darwin_soldier.client.aim.compat.tacz.TaczBallisticsResolver;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 
 /**
  * 弹道发射状态门面：先尝试原版解析，原版不支持且 TaCZ 已加载时再走 TaCZ 兼容解析。

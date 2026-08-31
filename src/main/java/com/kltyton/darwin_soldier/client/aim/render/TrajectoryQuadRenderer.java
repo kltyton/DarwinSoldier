@@ -73,9 +73,9 @@ final class TrajectoryQuadRenderer {
             float x4, float y4, float z4,
             int red, int green, int blue, int alpha
     ) {
-        consumer.vertex(pose, x1, y1, z1).color(red, green, blue, alpha).endVertex();
-        consumer.vertex(pose, x2, y2, z2).color(red, green, blue, alpha).endVertex();
-        consumer.vertex(pose, x3, y3, z3).color(red, green, blue, alpha).endVertex();
-        consumer.vertex(pose, x4, y4, z4).color(red, green, blue, alpha).endVertex();
+        consumer.addVertex(pose, x1, y1, z1).setColor(red, green, blue, alpha);
+        consumer.addVertex(pose, x2, y2, z2).setColor(red, green, blue, alpha);
+        consumer.addVertex(pose, x3, y3, z3).setColor(red, green, blue, alpha);
+        consumer.addVertex(pose, x4, y4, z4).setColor(red, green, blue, alpha);
     }
 }

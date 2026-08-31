@@ -31,11 +31,11 @@ public final class NutritionFood {
     }
 
     public static boolean applyFood(Player player, FoodData foodData, int baseFood,
-                                    float baseSaturationModifier) {
+                                    float baseSaturation) {
         if (player instanceof ServerPlayer serverPlayer) {
-            return applyServerFood(serverPlayer, foodData, baseFood, baseSaturationModifier);
+            return applyServerFood(serverPlayer, foodData, baseFood, baseSaturation);
         }
-        return applyClientFood(foodData, baseFood, baseSaturationModifier);
+        return applyClientFood(foodData, baseFood, baseSaturation);
     }
 
     public static boolean shouldScale(Player player) {
@@ -70,7 +70,7 @@ public final class NutritionFood {
     }
 
     private static boolean applyServerFood(ServerPlayer player, FoodData foodData, int baseFood,
-                                           float baseSaturationModifier) {
+                                           float baseSaturation) {
         if (!DarwinConfig.NUTRITION_ENABLED.get()) {
             return false;
         }
@@ -90,13 +90,13 @@ public final class NutritionFood {
 
         NutritionMath.IntegralScaling foodScaling = nutrition.scaleFoodRestoration(
                 baseFood, DarwinConfig.NUTRITION_FOOD_RESTORE_BONUS_PER_POINT.get());
-        applyScaledFood(foodData, maximum, foodScaling.amount(), baseFood, baseSaturationModifier, points,
+        applyScaledFood(foodData, maximum, foodScaling.amount(), baseSaturation, points,
                 DarwinConfig.NUTRITION_SATURATION_RESTORE_BONUS_PER_POINT.get());
         savedData.setDirty();
         return true;
     }
 
-    private static boolean applyClientFood(FoodData foodData, int baseFood, float baseSaturationModifier) {
+    private static boolean applyClientFood(FoodData foodData, int baseFood, float baseSaturation) {
         if (!NutritionClientState.isActive()) {
             return false;
         }
@@ -109,18 +109,17 @@ public final class NutritionFood {
 
         int scaledFood = NutritionMath.scaleIntegral(baseFood, points,
                 NutritionClientState.getFoodBonusPerPoint(), 0.0D).amount();
-        applyScaledFood(foodData, maximum, scaledFood, baseFood, baseSaturationModifier, points,
+        applyScaledFood(foodData, maximum, scaledFood, baseSaturation, points,
                 NutritionClientState.getSaturationBonusPerPoint());
         return true;
     }
 
     private static void applyScaledFood(FoodData foodData, int maximum, int scaledFood,
-                                        int baseFood, float baseSaturationModifier, int nutritionPoints,
+                                        float baseSaturation, int nutritionPoints,
                                         double saturationBonusPerPoint) {
         long increasedFood = (long) foodData.getFoodLevel() + Math.max(0, scaledFood);
         int finalFood = (int) Math.max(0L,
                 Math.min(maximum, Math.min(Integer.MAX_VALUE, increasedFood)));
-        double baseSaturation = (double) baseFood * baseSaturationModifier * 2.0D;
         double saturationMultiplier = NutritionMath.restorationMultiplier(nutritionPoints, saturationBonusPerPoint);
         float finalSaturation = (float) Math.min(finalFood,
                 foodData.getSaturationLevel() + Math.max(0.0D, baseSaturation * saturationMultiplier));

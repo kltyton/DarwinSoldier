@@ -11,7 +11,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -75,7 +75,7 @@ public final class TargetLockRenderer {
             return;
         }
 
-        float partialTick = event.getPartialTick();
+        float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         AABB box = target.getBoundingBox()
                 .move(target.getPosition(partialTick).subtract(target.position()));
         Vec3 center = box.getCenter();
@@ -142,13 +142,13 @@ public final class TargetLockRenderer {
     private static void quad(VertexConsumer consumer, Matrix4f pose,
                              Vec3 cornerA, Vec3 cornerB, Vec3 cornerC, Vec3 cornerD,
                              int red, int green, int blue, int alpha) {
-        consumer.vertex(pose, (float) cornerA.x, (float) cornerA.y, (float) cornerA.z)
-                .color(red, green, blue, alpha).endVertex();
-        consumer.vertex(pose, (float) cornerB.x, (float) cornerB.y, (float) cornerB.z)
-                .color(red, green, blue, alpha).endVertex();
-        consumer.vertex(pose, (float) cornerC.x, (float) cornerC.y, (float) cornerC.z)
-                .color(red, green, blue, alpha).endVertex();
-        consumer.vertex(pose, (float) cornerD.x, (float) cornerD.y, (float) cornerD.z)
-                .color(red, green, blue, alpha).endVertex();
+        consumer.addVertex(pose, (float) cornerA.x, (float) cornerA.y, (float) cornerA.z)
+                .setColor(red, green, blue, alpha);
+        consumer.addVertex(pose, (float) cornerB.x, (float) cornerB.y, (float) cornerB.z)
+                .setColor(red, green, blue, alpha);
+        consumer.addVertex(pose, (float) cornerC.x, (float) cornerC.y, (float) cornerC.z)
+                .setColor(red, green, blue, alpha);
+        consumer.addVertex(pose, (float) cornerD.x, (float) cornerD.y, (float) cornerD.z)
+                .setColor(red, green, blue, alpha);
     }
 }

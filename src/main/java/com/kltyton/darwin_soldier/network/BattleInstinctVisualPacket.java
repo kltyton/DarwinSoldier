@@ -1,16 +1,16 @@
 package com.kltyton.darwin_soldier.network;
 
-import com.kltyton.darwin_soldier.client.battle.BattleInstinctClientVisuals;
-import com.kltyton.darwin_soldier.diagnostic.RuntimeDiagnostics;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
 
-import java.util.function.Supplier;
-
-public record BattleInstinctVisualPacket(int playerId, Vec3 start, Vec3 end, int blockPoseTicks, int trailTicks) {
+public record BattleInstinctVisualPacket(int playerId, Vec3 start, Vec3 end, int blockPoseTicks, int trailTicks)
+        implements CustomPacketPayload {
+    public static final Type<BattleInstinctVisualPacket> TYPE = ModNetwork.type("battle_instinct_visual");
+    public static final StreamCodec<RegistryFriendlyByteBuf, BattleInstinctVisualPacket> STREAM_CODEC =
+            ModNetwork.codec(BattleInstinctVisualPacket::encode, BattleInstinctVisualPacket::decode);
     public static void encode(BattleInstinctVisualPacket packet, FriendlyByteBuf buffer) {
         buffer.writeVarInt(packet.playerId());
         writeVec3(buffer, packet.start());
@@ -24,12 +24,9 @@ public record BattleInstinctVisualPacket(int playerId, Vec3 start, Vec3 end, int
                 buffer.readVarInt(), buffer.readVarInt());
     }
 
-    public static void handle(BattleInstinctVisualPacket packet, Supplier<NetworkEvent.Context> context) {
-        RuntimeDiagnostics.info("battle_visual_receive", "playerId=" + packet.playerId()
-                + " start=" + packet.start() + " end=" + packet.end()
-                + " blockPoseTicks=" + packet.blockPoseTicks() + " trailTicks=" + packet.trailTicks());
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> BattleInstinctClientVisuals.start(packet));
-        context.get().setPacketHandled(true);
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
     private static void writeVec3(FriendlyByteBuf buffer, Vec3 value) {

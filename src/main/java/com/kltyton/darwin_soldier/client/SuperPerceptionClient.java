@@ -22,6 +22,7 @@ import com.kltyton.darwin_soldier.config.DarwinConfig;
 import com.kltyton.darwin_soldier.diagnostic.RuntimeDiagnostics;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -41,7 +42,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.ClipContext;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
@@ -191,7 +191,7 @@ public final class SuperPerceptionClient {
     }
 
     private static boolean isWhitelisted(LivingEntity target) {
-        ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(target.getType());
+        ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(target.getType());
         if (id == null) {
             return false;
         }
@@ -540,7 +540,7 @@ public final class SuperPerceptionClient {
     }
 
     private static String describeEntity(LivingEntity target) {
-        ResourceLocation id = ForgeRegistries.ENTITY_TYPES.getKey(target.getType());
+        ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(target.getType());
         return (id == null ? target.getType().toString() : id.toString()) + "#" + target.getId();
     }
 }

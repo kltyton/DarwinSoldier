@@ -1,11 +1,13 @@
 package com.kltyton.darwin_soldier.client.aim.ballistics;
 
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.CrossbowItem;
+import net.minecraft.world.item.component.ChargedProjectiles;
 import net.minecraft.world.item.EggItem;
 import net.minecraft.world.item.EnderpearlItem;
 import net.minecraft.world.item.ExperienceBottleItem;
@@ -33,7 +35,7 @@ public final class VanillaProjectileLaunchResolver {
             if (!isUsingMainHand(player, stack)) {
                 return null;
             }
-            int chargeTicks = stack.getUseDuration() - player.getUseItemRemainingTicks();
+            int chargeTicks = stack.getUseDuration(player) - player.getUseItemRemainingTicks();
             double speed = VanillaProjectilePhysics.bowLaunchSpeed(chargeTicks);
             if (speed < 0.1D) {
                 return null;
@@ -44,7 +46,9 @@ public final class VanillaProjectileLaunchResolver {
         }
 
         if (item instanceof CrossbowItem && CrossbowItem.isCharged(stack)) {
-            boolean firework = CrossbowItem.containsChargedProjectile(stack, Items.FIREWORK_ROCKET);
+            ChargedProjectiles projectiles = stack.getOrDefault(
+                    DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.EMPTY);
+            boolean firework = projectiles.contains(Items.FIREWORK_ROCKET);
             double speed = firework ? 1.6D : 3.15D;
             Vec3 origin = interpolatedOrigin(player, partialTick, firework ? 0.15D : 0.1D);
             return new ProjectileLaunchState(firework ? "vanilla_crossbow_firework" : "vanilla_crossbow_arrow",
@@ -54,9 +58,9 @@ public final class VanillaProjectileLaunchResolver {
         }
 
         if (item instanceof TridentItem && isUsingMainHand(player, stack)) {
-            int chargeTicks = stack.getUseDuration() - player.getUseItemRemainingTicks();
-            int riptide = EnchantmentHelper.getRiptide(stack);
-            if (chargeTicks < 10 || riptide != 0) {
+            int chargeTicks = stack.getUseDuration(player) - player.getUseItemRemainingTicks();
+            float riptideStrength = EnchantmentHelper.getTridentSpinAttackStrength(stack, player);
+            if (chargeTicks < 10 || riptideStrength > 0.0F) {
                 return null;
             }
             Vec3 inherited = inheritedVelocity(player, true);

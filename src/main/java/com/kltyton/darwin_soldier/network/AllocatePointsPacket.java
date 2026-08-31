@@ -5,13 +5,17 @@ import com.kltyton.darwin_soldier.data.GrowthSavedData;
 import com.kltyton.darwin_soldier.data.PlayerGrowthData;
 import com.kltyton.darwin_soldier.diagnostic.RuntimeDiagnostics;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
-
-import java.util.function.Supplier;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public record AllocatePointsPacket(int healthPoints, int attackPoints, int defensePoints, int perceptionPoints,
-                                   int nutritionPoints) {
+                                   int nutritionPoints) implements CustomPacketPayload {
+    public static final Type<AllocatePointsPacket> TYPE = ModNetwork.type("allocate_points");
+    public static final StreamCodec<RegistryFriendlyByteBuf, AllocatePointsPacket> STREAM_CODEC =
+            ModNetwork.codec(AllocatePointsPacket::encode, AllocatePointsPacket::decode);
     public static void encode(AllocatePointsPacket packet, FriendlyByteBuf buffer) {
         buffer.writeVarInt(packet.healthPoints);
         buffer.writeVarInt(packet.attackPoints);
@@ -25,11 +29,8 @@ public record AllocatePointsPacket(int healthPoints, int attackPoints, int defen
                 buffer.readVarInt(), buffer.readVarInt());
     }
 
-    public static void handle(AllocatePointsPacket packet, Supplier<NetworkEvent.Context> context) {
-        ServerPlayer player = context.get().getSender();
-        if (player == null) {
-            return;
-        }
+    public static void handle(AllocatePointsPacket packet, IPayloadContext context) {
+        ServerPlayer player = (ServerPlayer) context.player();
 
         GrowthSavedData savedData = GrowthSavedData.get(player);
         PlayerGrowthData data = savedData.getOrCreate(player.getUUID());
@@ -55,5 +56,10 @@ public record AllocatePointsPacket(int healthPoints, int attackPoints, int defen
             com.kltyton.darwin_soldier.nutrition.NutritionFood.clampToMaximum(player, data);
         }
         ModNetwork.syncTo(player, data);
+    }
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 }

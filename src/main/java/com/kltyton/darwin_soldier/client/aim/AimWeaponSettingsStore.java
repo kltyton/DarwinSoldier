@@ -8,10 +8,10 @@ import com.google.gson.JsonParser;
 import com.kltyton.darwin_soldier.Darwin_soldier;
 import com.kltyton.darwin_soldier.client.aim.ballistics.ProjectileBallistics;
 import com.kltyton.darwin_soldier.diagnostic.RuntimeDiagnostics;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.fml.loading.FMLPaths;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -34,7 +34,7 @@ public final class AimWeaponSettingsStore {
     }
 
     public static synchronized ResourceLocation weaponId(ItemStack stack) {
-        return stack.isEmpty() ? null : ForgeRegistries.ITEMS.getKey(stack.getItem());
+        return stack.isEmpty() ? null : BuiltInRegistries.ITEM.getKey(stack.getItem());
     }
 
     public static synchronized AimWeaponSettings get(ItemStack stack) {

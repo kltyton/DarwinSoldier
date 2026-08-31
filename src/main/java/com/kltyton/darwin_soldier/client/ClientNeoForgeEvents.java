@@ -12,31 +12,26 @@ import com.kltyton.darwin_soldier.diagnostic.RuntimeDiagnostics;
 import com.kltyton.darwin_soldier.network.ModNetwork;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderGuiOverlayEvent;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.client.event.RenderFrameEvent;
+import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.neoforged.bus.api.SubscribeEvent;
 
-@Mod.EventBusSubscriber(modid = Darwin_soldier.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
-public final class ClientForgeEvents {
+public final class ClientNeoForgeEvents {
     private static boolean efficientMetabolismDown;
 
 
     @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
-
+    public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
         ProjectileBallisticsTracker.tick(minecraft);
         if (minecraft.player == null || minecraft.level == null) {
@@ -99,10 +94,7 @@ public final class ClientForgeEvents {
     }
 
     @SubscribeEvent
-    public static void onRenderTick(TickEvent.RenderTickEvent event) {
-        if (event.phase != TickEvent.Phase.START) {
-            return;
-        }
+    public static void onRenderFrame(RenderFrameEvent.Pre event) {
         // Sole automatic aim-rotation writer: advances the smoother at frame
         // rate instead of the 20 Hz client tick rate.
         SuperPerceptionClient.renderFrame(Minecraft.getInstance());
@@ -133,18 +125,20 @@ public final class ClientForgeEvents {
     }
 
     @SubscribeEvent
-    public static void onRenderGuiOverlay(RenderGuiOverlayEvent.Post event) {
+    public static void onRenderGuiLayer(RenderGuiLayerEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.options.hideGui || !ClientGrowthData.isEnabled()
-                || event.getOverlay() != VanillaGuiOverlay.HOTBAR.type()) {
+                || !event.getName().equals(VanillaGuiLayers.HOTBAR)) {
             return;
         }
 
         GuiGraphics graphics = event.getGuiGraphics();
+        int guiWidth = minecraft.getWindow().getGuiScaledWidth();
+        int guiHeight = minecraft.getWindow().getGuiScaledHeight();
         GrowthGainHud.render(graphics, minecraft,
-                event.getWindow().getGuiScaledWidth(), event.getWindow().getGuiScaledHeight());
-        int x = event.getWindow().getGuiScaledWidth() / 2 + 96;
-        int y = event.getWindow().getGuiScaledHeight() - 42;
+                guiWidth, guiHeight);
+        int x = guiWidth / 2 + 96;
+        int y = guiHeight - 42;
 
         if (ClientGrowthData.isNutritionFeatureEnabled() && ClientGrowthData.isNutritionFullnessActive()) {
             drawStatusLine(graphics, minecraft, Component.translatable("hud.darwin_soldier.nutrition_fullness"),
@@ -171,7 +165,7 @@ public final class ClientForgeEvents {
         }
     }
 
-    private static void drawCooldownLine(GuiGraphics graphics, Minecraft minecraft, MobEffect effect, Component text, int x, int y, int color) {
+    private static void drawCooldownLine(GuiGraphics graphics, Minecraft minecraft, Holder<MobEffect> effect, Component text, int x, int y, int color) {
         graphics.blit(x, y - 5, 0, 18, 18, minecraft.getMobEffectTextures().get(effect));
         graphics.drawString(minecraft.font, text, x + 22, y, color);
     }

@@ -6,7 +6,7 @@ import com.kltyton.darwin_soldier.config.DarwinConfig;
 import com.sighs.apricityui.init.Document;
 import com.sighs.apricityui.init.Element;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -104,8 +104,8 @@ public final class DarwinConfigAuiScreen extends InteractiveAuiScreen {
                 collect(nextCategory, nestedValues, nestedSpecs);
                 continue;
             }
-            if (!(rawValue instanceof ForgeConfigSpec.ConfigValue<?> configValue)
-                    || !(rawSpec instanceof ForgeConfigSpec.ValueSpec valueSpec)) {
+            if (!(rawValue instanceof ModConfigSpec.ConfigValue<?> configValue)
+                    || !(rawSpec instanceof ModConfigSpec.ValueSpec valueSpec)) {
                 continue;
             }
             if (!isVisibleCategory(nextCategory)) {
@@ -175,7 +175,7 @@ public final class DarwinConfigAuiScreen extends InteractiveAuiScreen {
     }
 
     private String rangeAttributes(Field field) {
-        ForgeConfigSpec.Range<?> range = field.spec.getRange();
+        ModConfigSpec.Range<?> range = field.spec.getRange();
         if (range == null) {
             return "";
         }
@@ -270,8 +270,8 @@ public final class DarwinConfigAuiScreen extends InteractiveAuiScreen {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private static void setConfigValue(ForgeConfigSpec.ConfigValue<?> value, Object parsed) {
-        ((ForgeConfigSpec.ConfigValue) value).set(parsed);
+    private static void setConfigValue(ModConfigSpec.ConfigValue<?> value, Object parsed) {
+        ((ModConfigSpec.ConfigValue) value).set(parsed);
     }
 
     private static String serialize(Object value) {
@@ -286,7 +286,7 @@ public final class DarwinConfigAuiScreen extends InteractiveAuiScreen {
     }
 
     private record Field(String category, String id, String key,
-                         ForgeConfigSpec.ConfigValue<?> value, ForgeConfigSpec.ValueSpec spec) {
+                         ModConfigSpec.ConfigValue<?> value, ModConfigSpec.ValueSpec spec) {
         private Kind kind() {
             Object sample = value.getDefault();
             if (sample instanceof Boolean) return Kind.BOOLEAN;

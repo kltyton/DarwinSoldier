@@ -1,9 +1,9 @@
 package com.kltyton.darwin_soldier.data;
 
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.Collection;
-import java.util.UUID;
 
 /**
  * Pure math for the protected-health compensation modifier.
@@ -20,13 +20,13 @@ public final class ProtectedHealthMath {
     /**
      * @param baseValue          the attribute base value (typically 20.0 for max health)
      * @param modifiers          the currently applied modifiers, including our own compensation
-     * @param excludedModifierId our compensation modifier UUID, excluded from the deficit
+     * @param excludedModifierId our compensation modifier ID, excluded from the deficit
      * @param contribution       the protected floor (Darwin max-health contribution)
      * @return the ADDITION amount needed so effective MAX_HEALTH is at least the contribution,
      * or 0.0 when no deficit remains or no positive ADDITION scaling exists to compensate with
      */
     public static double compensationNeeded(double baseValue, Collection<AttributeModifier> modifiers,
-                                            UUID excludedModifierId, double contribution) {
+                                            ResourceLocation excludedModifierId, double contribution) {
         if (!Double.isFinite(contribution) || contribution <= 0.0D) {
             return 0.0D;
         }
@@ -34,13 +34,13 @@ public final class ProtectedHealthMath {
         double multiplyBaseSum = 0.0D;
         double multiplyTotalProduct = 1.0D;
         for (AttributeModifier modifier : modifiers) {
-            if (modifier.getId().equals(excludedModifierId)) {
+            if (modifier.id().equals(excludedModifierId)) {
                 continue;
             }
-            switch (modifier.getOperation()) {
-                case ADDITION -> additionSum += modifier.getAmount();
-                case MULTIPLY_BASE -> multiplyBaseSum += modifier.getAmount();
-                case MULTIPLY_TOTAL -> multiplyTotalProduct *= 1.0D + modifier.getAmount();
+            switch (modifier.operation()) {
+                case ADD_VALUE -> additionSum += modifier.amount();
+                case ADD_MULTIPLIED_BASE -> multiplyBaseSum += modifier.amount();
+                case ADD_MULTIPLIED_TOTAL -> multiplyTotalProduct *= 1.0D + modifier.amount();
             }
         }
         double baseFactor = 1.0D + multiplyBaseSum;

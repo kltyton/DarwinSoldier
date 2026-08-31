@@ -2,11 +2,12 @@ package com.kltyton.darwin_soldier.data.generation;
 
 import com.kltyton.darwin_soldier.Darwin_soldier;
 import com.kltyton.darwin_soldier.combat.DarwinDamageTypes;
+import com.kltyton.darwin_soldier.data.generation.recipe.DarwinRecipeProvider;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.DataGenerator;
-import net.minecraftforge.common.data.DatapackBuiltinEntriesProvider;
-import net.minecraftforge.data.event.GatherDataEvent;
+import net.neoforged.neoforge.common.data.DatapackBuiltinEntriesProvider;
+import net.neoforged.neoforge.data.event.GatherDataEvent;
 
 import java.util.Set;
 
@@ -26,5 +27,6 @@ public final class DarwinDataGenerators {
                         registryBuilder, Set.of(Darwin_soldier.MODID)));
         generator.addProvider(true, new DarwinDamageTypeTagsProvider(generator.getPackOutput(),
                 damageTypes.getRegistryProvider(), event.getExistingFileHelper()));
+        generator.addProvider(true, new DarwinRecipeProvider(generator.getPackOutput(), event.getLookupProvider()));
     }
 }

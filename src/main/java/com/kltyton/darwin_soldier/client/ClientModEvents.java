@@ -4,17 +4,17 @@ import com.kltyton.darwin_soldier.Darwin_soldier;
 import com.kltyton.darwin_soldier.client.ui.config.DarwinConfigAuiScreen;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.client.ConfigScreenHandler;
-import net.minecraftforge.client.settings.KeyConflictContext;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.neoforged.neoforge.client.settings.KeyConflictContext;
+import net.neoforged.neoforge.common.NeoForge;
 import org.lwjgl.glfw.GLFW;
 
-@Mod.EventBusSubscriber(modid = Darwin_soldier.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@Mod(value = Darwin_soldier.MODID, dist = Dist.CLIENT)
 public final class ClientModEvents {
     public static final KeyMapping OPEN_GROWTH_SCREEN = new KeyMapping(
             "key.darwin_soldier.open_growth_screen",
@@ -59,17 +59,13 @@ public final class ClientModEvents {
             "key.categories.darwin_soldier"
     );
 
-    private ClientModEvents() {
+    public ClientModEvents(IEventBus modEventBus, ModContainer modContainer) {
+        modContainer.registerExtensionPoint(IConfigScreenFactory.class,
+                (IConfigScreenFactory) (container, parent) -> new DarwinConfigAuiScreen(parent));
+        modEventBus.addListener(ClientModEvents::registerKeyMappings);
+        NeoForge.EVENT_BUS.register(ClientNeoForgeEvents.class);
     }
 
-    @SubscribeEvent
-    @SuppressWarnings("removal")
-    public static void clientSetup(FMLClientSetupEvent event) {
-        ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class,
-                () -> new ConfigScreenHandler.ConfigScreenFactory((minecraft, parent) -> new DarwinConfigAuiScreen(parent)));
-    }
-
-    @SubscribeEvent
     public static void registerKeyMappings(RegisterKeyMappingsEvent event) {
         event.register(OPEN_GROWTH_SCREEN);
         event.register(ACTIVATE_HUNTING_INSTINCT);

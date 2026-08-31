@@ -3,7 +3,7 @@ package com.kltyton.darwin_soldier.compat.thirst;
 import com.kltyton.darwin_soldier.Darwin_soldier;
 import com.kltyton.darwin_soldier.data.NutritionData;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 
 public final class ThirstCompat {
     public static final String THIRST_WAS_TAKEN_MOD_ID = "thirst";

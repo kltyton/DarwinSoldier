@@ -31,22 +31,21 @@ import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
-import net.minecraftforge.event.entity.living.LivingDamageEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.LivingHealEvent;
-import net.minecraftforge.event.entity.living.LivingAttackEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.event.entity.living.LivingKnockBackEvent;
-import net.minecraftforge.event.entity.living.MobEffectEvent;
-import net.minecraftforge.event.entity.living.ShieldBlockEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.server.ServerStoppedEvent;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingHealEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
+import net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent;
+import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
 
 import java.util.UUID;
 
@@ -57,7 +56,7 @@ public final class GrowthEvents {
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void onPlayerAttack(LivingAttackEvent event) {
+    public static void onPlayerAttack(LivingIncomingDamageEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player) || player.level().isClientSide) {
             return;
         }
@@ -80,7 +79,7 @@ public final class GrowthEvents {
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onPlayerHurt(LivingHurtEvent event) {
+    public static void onPlayerHurt(LivingIncomingDamageEvent event) {
         if (event.getEntity().level().isClientSide) {
             return;
         }
@@ -159,7 +158,7 @@ public final class GrowthEvents {
     }
 
     @SubscribeEvent
-    public static void onPlayerDamage(LivingDamageEvent event) {
+    public static void onPlayerDamage(LivingDamageEvent.Pre event) {
         if (event.getEntity().level().isClientSide) {
             return;
         }
@@ -172,11 +171,11 @@ public final class GrowthEvents {
             PlayerGrowthData data = savedData.getOrCreate(attacker.getUUID());
             long now = attacker.serverLevel().getGameTime();
             if (!data.isBattleInstinctCounterActiveFor(event.getEntity().getId(), now)) {
-                event.setAmount(GrowthAbilities.applyCriticalDamage(attacker, event.getAmount()));
+                event.setNewDamage(GrowthAbilities.applyCriticalDamage(attacker, event.getNewDamage()));
             }
         }
 
-        if (!(event.getEntity() instanceof ServerPlayer player) || event.getAmount() <= 0.0F) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || event.getNewDamage() <= 0.0F) {
             return;
         }
         if (DarwinDamageTypes.isInternal(event.getSource())) {
@@ -192,8 +191,8 @@ public final class GrowthEvents {
     }
 
     @SubscribeEvent(priority = EventPriority.LOW)
-    public static void onPlayerDamageDefenseReduction(LivingDamageEvent event) {
-        if (event.getEntity().level().isClientSide || event.isCanceled() || event.getAmount() <= 0.0F) {
+    public static void onPlayerDamageDefenseReduction(LivingDamageEvent.Pre event) {
+        if (event.getEntity().level().isClientSide || event.getNewDamage() <= 0.0F) {
             return;
         }
         if (!(event.getEntity() instanceof ServerPlayer player)) {
@@ -207,12 +206,12 @@ public final class GrowthEvents {
         if (!data.isEnabled()) {
             return;
         }
-        event.setAmount(DefenseReductionTracker.applyDefenseReduction(player, source, event.getAmount(),
+        event.setNewDamage(DefenseReductionTracker.applyDefenseReduction(player, source, event.getNewDamage(),
                 DefenseReductionMath.minimumReduction(data.getDefensePoints())));
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onFinalOutgoingDamage(LivingDamageEvent event) {
+    public static void onFinalOutgoingDamage(LivingDamageEvent.Pre event) {
         if (event.getEntity().level().isClientSide) {
             return;
         }
@@ -220,12 +219,12 @@ public final class GrowthEvents {
         DamageSource source = event.getSource();
         if (source.is(DarwinDamageTypes.MINIMUM_DAMAGE_CORRECTION)) {
             MinimumEffectiveDamageTracker.forceCorrectionFinalDamage(event);
-            if (event.getAmount() > 0.0F) {
+            if (event.getNewDamage() > 0.0F) {
                 CombatParticipationTracker.recordDamage(event.getEntity(), source);
             }
             return;
         }
-        if (event.getAmount() <= 0.0F) {
+        if (event.getNewDamage() <= 0.0F) {
             return;
         }
         if (source.is(DarwinDamageTypes.INTERNAL_INJURY)) {
@@ -233,13 +232,13 @@ public final class GrowthEvents {
             return;
         }
         if (source.is(DarwinDamageTypes.HUNTING_SHOCK)) {
-            event.setAmount(InternalInjuryTracker.applyVulnerability(event.getEntity(), source, event.getAmount()));
+            event.setNewDamage(InternalInjuryTracker.applyVulnerability(event.getEntity(), source, event.getNewDamage()));
             CombatParticipationTracker.recordDamage(event.getEntity(), source);
             return;
         }
 
         ServerPlayer attacker = MinimumEffectiveDamageTracker.resolvePlayer(source);
-        float amount = event.getAmount();
+        float amount = event.getNewDamage();
         if (attacker != null) {
             boolean shieldBlocked = MinimumEffectiveDamageTracker.consumeShieldBlock(event.getEntity(), source);
             PlayerGrowthData data = GrowthSavedData.get(attacker).getOrCreate(attacker.getUUID());
@@ -255,15 +254,15 @@ public final class GrowthEvents {
                 } else if (!shieldBlocked) {
                     MinimumEffectiveDamageTracker.recordNonMelee(attacker, event.getEntity(), source, amount);
                 }
-                event.setAmount(amount);
+                event.setNewDamage(amount);
             }
         }
         CombatParticipationTracker.recordDamage(event.getEntity(), source);
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onShieldBlock(ShieldBlockEvent event) {
-        if (!event.getEntity().level().isClientSide && !event.isCanceled() && event.getBlockedDamage() > 0.0F) {
+    public static void onShieldBlock(LivingShieldBlockEvent event) {
+        if (!event.getEntity().level().isClientSide && event.getBlocked() && event.getBlockedDamage() > 0.0F) {
             MinimumEffectiveDamageTracker.markShieldBlock(event.getEntity(), event.getDamageSource());
         }
     }
@@ -364,8 +363,8 @@ public final class GrowthEvents {
     }
 
     @SubscribeEvent
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || !(event.player instanceof ServerPlayer player)) {
+    public static void onPlayerTick(PlayerTickEvent.Post event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
 
@@ -395,11 +394,9 @@ public final class GrowthEvents {
     }
 
     @SubscribeEvent
-    public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase == TickEvent.Phase.END) {
-            MinimumEffectiveDamageTracker.tick(event.getServer());
-            InternalInjuryTracker.tick(event.getServer());
-        }
+    public static void onServerTick(ServerTickEvent.Post event) {
+        MinimumEffectiveDamageTracker.tick(event.getServer());
+        InternalInjuryTracker.tick(event.getServer());
     }
 
     @SubscribeEvent
@@ -410,7 +407,7 @@ public final class GrowthEvents {
         }
         PlayerGrowthData data = GrowthSavedData.get(player).getOrCreate(player.getUUID());
         if (HuntingInstinct.isSlownessImmune(player, data)) {
-            event.setResult(Event.Result.DENY);
+            event.setResult(MobEffectEvent.Applicable.Result.DO_NOT_APPLY);
         }
     }
 
