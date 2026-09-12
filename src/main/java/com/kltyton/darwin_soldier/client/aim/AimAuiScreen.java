@@ -1,11 +1,12 @@
 package com.kltyton.darwin_soldier.client.aim;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.kltyton.darwin_soldier.client.aim.ballistics.ProjectileBallisticsTracker;
 import com.kltyton.darwin_soldier.client.aim.ballistics.WeaponLaunchResolver;
 import com.kltyton.darwin_soldier.client.ui.foundation.InteractiveAuiScreen;
 import com.kltyton.darwin_soldier.diagnostic.RuntimeDiagnostics;
 import com.sighs.apricityui.init.Document;
-import com.sighs.apricityui.init.Element;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -36,25 +37,43 @@ public final class AimAuiScreen extends InteractiveAuiScreen {
 
     @Override
     protected void renderDocument(Document document) {
-        boolean hasWeapon = weaponId != null;
-        className(document, "aim-no-weapon", hasWeapon ? "alert alert-danger hidden" : "alert alert-danger");
-        className(document, "aim-content", hasWeapon ? "card card-accent-purple" : "card card-accent-purple hidden");
-        if (!hasWeapon) {
-            return;
+        JsonObject state = new JsonObject();
+        state.addProperty("title", tr("screen.darwin_soldier.aim.title"));
+        state.addProperty("closeLabel", tr("gui.back"));
+        state.addProperty("closeAction", "back");
+        state.addProperty("hasWeapon", weaponId != null);
+        state.addProperty("noWeapon", tr("screen.darwin_soldier.aim.no_weapon"));
+        state.addProperty("resetLabel", tr("screen.darwin_soldier.aim.reset"));
+        state.addProperty("recalibrateLabel", tr("screen.darwin_soldier.aim.recalibrate"));
+        if (weaponId != null) {
+            state.addProperty("weapon", tr("screen.darwin_soldier.aim.current_weapon", weapon.getHoverName()));
+            state.addProperty("weaponId", weaponId.toString());
+            state.addProperty("ballistics", ballisticsStatus().getString());
+            state.addProperty("mode", tr(settings.mode() == AimMode.MANUAL
+                    ? "screen.darwin_soldier.aim.mode_manual" : "screen.darwin_soldier.aim.mode_adaptive"));
+            state.addProperty("trajectory", tr(settings.trajectoryVisible()
+                    ? "screen.darwin_soldier.aim.trajectory_on" : "screen.darwin_soldier.aim.trajectory_off"));
+            state.addProperty("trajectoryVisible", settings.trajectoryVisible());
+            JsonArray tuning = new JsonArray();
+            for (TuningField field : TuningField.values()) {
+                JsonObject item = new JsonObject();
+                item.addProperty("field", field.name());
+                item.addProperty("label", tr(field.translationKey));
+                item.addProperty("value", field.read(settings.activeTuning()));
+                item.addProperty("formatted", format(field.read(settings.activeTuning())));
+                item.addProperty("min", field.minimum);
+                item.addProperty("max", field.maximum);
+                item.addProperty("step", field.step);
+                tuning.add(item);
+            }
+            state.add("tuning", tuning);
         }
-        text(document, "aim-weapon", tr("screen.darwin_soldier.aim.current_weapon", weapon.getHoverName()));
-        text(document, "aim-weapon-id", weaponId.toString());
-        text(document, "aim-ballistics", ballisticsStatus());
-        text(document, "aim-mode", tr(settings.mode() == AimMode.MANUAL
-                ? "screen.darwin_soldier.aim.mode_manual" : "screen.darwin_soldier.aim.mode_adaptive"));
-        text(document, "aim-trajectory", tr(settings.trajectoryVisible()
-                ? "screen.darwin_soldier.aim.trajectory_on" : "screen.darwin_soldier.aim.trajectory_off"));
-        html(document, "aim-fields", tuningMarkup());
-        refreshTuningState(document);
+        publishState(document, state);
     }
 
     @Override
-    protected void handleAction(Document document, Element action, String actionName) {
+    protected void handleAction(Document document, JsonObject action, String actionName) {
+        if (weaponId == null && !"back".equals(actionName)) return;
         switch (actionName) {
             case "back" -> onClose();
             case "toggle-mode" -> {
@@ -66,7 +85,7 @@ public final class AimAuiScreen extends InteractiveAuiScreen {
                 saveSettingsImmediately();
             }
             case "adjust-tuning" -> adjust(TuningField.valueOf(data(action, "field")),
-                    Integer.parseInt(data(action, "direction")) * modifierStep());
+                    integerData(action, "direction") * modifierStep());
             case "reset" -> resetSettings();
             case "recalibrate" -> recalibrate();
             default -> {
@@ -79,18 +98,13 @@ public final class AimAuiScreen extends InteractiveAuiScreen {
     }
 
     @Override
-    protected void handleInput(Document document, Element input) {
-        if (!"tuning".equals(data(input, "input"))) {
-            return;
-        }
-        try {
-            TuningField field = TuningField.valueOf(data(input, "field"));
-            update(field, Double.parseDouble(input.getValue()));
-            text(document, "tuning-" + field.name().toLowerCase(Locale.ROOT) + "-value",
-                    format(field.read(settings.activeTuning())));
-        } catch (IllegalArgumentException ignored) {
-            refreshTuningState(document);
-        }
+    protected void handleInput(Document document, JsonObject input) {
+        if (weaponId == null || !"tuning".equals(data(input, "input"))) return;
+        TuningField field = TuningField.valueOf(data(input, "field"));
+        double value = Double.parseDouble(data(input, "value"));
+        if (!Double.isFinite(value)) throw new IllegalArgumentException("Expected finite aim tuning");
+        update(field, value);
+        renderNow();
     }
 
     @Override
@@ -120,39 +134,6 @@ public final class AimAuiScreen extends InteractiveAuiScreen {
         super.removed();
     }
 
-    private String tuningMarkup() {
-        StringBuilder markup = new StringBuilder();
-        for (TuningField field : TuningField.values()) {
-            String token = field.name().toLowerCase(Locale.ROOT);
-            markup.append("<div class=\"darwin-allocation-row\"><div class=\"darwin-allocation-head\"><label for=\"tuning-")
-                    .append(token).append("\">").append(escapeHtml(tr(field.translationKey)))
-                    .append("</label><div class=\"darwin-stepper\">")
-                    .append(stepButton(field, -1, "-"))
-                    .append("<span id=\"tuning-").append(token).append("-value\" class=\"darwin-step-value\"></span>")
-                    .append(stepButton(field, 1, "+"))
-                    .append("</div></div>")
-                    .append("<input id=\"tuning-").append(token)
-                    .append("\" class=\"darwin-range\" type=\"range\" min=\"").append(field.minimum)
-                    .append("\" max=\"").append(field.maximum).append("\" step=\"").append(field.step)
-                    .append("\" data-input=\"tuning\" data-field=\"").append(field.name())
-                    .append("\"></div>");
-        }
-        return markup.toString();
-    }
-
-    private String stepButton(TuningField field, int direction, String label) {
-        return "<button class=\"button button-small darwin-step-button\" type=\"button\" data-action=\"adjust-tuning\" data-field=\""
-                + field.name() + "\" data-direction=\"" + direction + "\">" + label + "</button>";
-    }
-
-    private void refreshTuningState(Document document) {
-        for (TuningField field : TuningField.values()) {
-            String token = field.name().toLowerCase(Locale.ROOT);
-            double current = field.read(settings.activeTuning());
-            value(document, "tuning-" + token, Double.toString(current));
-            text(document, "tuning-" + token + "-value", format(current));
-        }
-    }
 
     private int modifierStep() {
         if (Screen.hasControlDown()) return 100;

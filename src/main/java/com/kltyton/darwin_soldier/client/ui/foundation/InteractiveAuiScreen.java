@@ -1,16 +1,22 @@
 package com.kltyton.darwin_soldier.client.ui.foundation;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.kltyton.darwin_soldier.diagnostic.RuntimeDiagnostics;
 import com.sighs.apricityui.event.Event;
 import com.sighs.apricityui.init.Document;
-import com.sighs.apricityui.init.Element;
 import com.sighs.apricityui.screen.ApricityScreen;
+import java.math.BigDecimal;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-/** Client-thread host shared by Darwin Soldier's interactive AUI pages. */
+/** Client-thread host for Vue pages backed by game state and explicit UI events. */
 public abstract class InteractiveAuiScreen extends ApricityScreen {
     private final Screen parent;
+    private String publishedState = "";
 
     protected InteractiveAuiScreen(String templatePath, Screen parent) {
         super(templatePath);
@@ -23,14 +29,14 @@ public abstract class InteractiveAuiScreen extends ApricityScreen {
     protected final void init() {
         super.init();
         Document document = getLinkedDocument();
-        if (document == null) {
-            return;
-        }
-        document.addEventListener("click", event -> dispatchAction(document, event));
-        document.addEventListener("input", event -> dispatchInput(document, event));
-        document.addEventListener("DOMContentLoaded", event -> renderIfCurrent(document));
+        if (document == null) return;
+        publishedState = "";
+        document.addEventListener("darwin-action", event -> receive(document, event, false));
+        document.addEventListener("darwin-input", event -> receive(document, event, true));
+        document.addEventListener("darwin-ready", event -> renderFresh(document));
+        document.addEventListener("DOMContentLoaded", event -> renderFresh(document));
         onDocumentCreated(document);
-        renderIfCurrent(document);
+        renderFresh(document);
     }
 
     protected void onDocumentCreated(Document document) {
@@ -38,16 +44,22 @@ public abstract class InteractiveAuiScreen extends ApricityScreen {
 
     protected abstract void renderDocument(Document document);
 
-    protected abstract void handleAction(Document document, Element action, String actionName);
+    protected abstract void handleAction(Document document, JsonObject action, String actionName);
 
-    protected void handleInput(Document document, Element input) {
+    protected void handleInput(Document document, JsonObject input) {
+    }
+
+    protected final void publishState(Document document, JsonObject state) {
+        String json = state.toString();
+        if (!json.equals(publishedState)) {
+            publishedState = json;
+            document.dispatchEvent(new Event.CustomEvent("darwin-state", json, false));
+        }
     }
 
     protected final void renderNow() {
         Document document = getLinkedDocument();
-        if (document != null) {
-            renderDocument(document);
-        }
+        if (document != null) renderDocument(document);
     }
 
     protected final Screen parent() {
@@ -63,101 +75,44 @@ public abstract class InteractiveAuiScreen extends ApricityScreen {
     @Override
     public void onClose() {
         super.onClose();
-        if (parent != null && minecraft != null) {
-            minecraft.setScreen(parent);
-        }
+        if (parent != null && minecraft != null) minecraft.setScreen(parent);
     }
 
-    protected static String data(Element element, String name) {
-        String value = element.getAttribute("data-" + name);
-        return value == null ? "" : value;
-    }
-
-    protected static void text(Document document, String id, Component value) {
-        text(document, id, value.getString());
-    }
-
-    protected static void text(Document document, String id, String value) {
-        Element element = document.getElementById(id);
-        if (element != null) {
-            element.setTextContent(value == null ? "" : value);
-        }
-    }
-
-    protected static void html(Document document, String id, String value) {
-        Element element = document.getElementById(id);
-        if (element != null) {
-            element.setInnerHTML(value == null ? "" : value);
-        }
-    }
-
-    protected static void value(Document document, String id, String value) {
-        Element element = document.getElementById(id);
-        if (element != null) {
-            element.setValue(value == null ? "" : value);
-        }
-    }
-
-    protected static void attribute(Document document, String id, String name, String value) {
-        Element element = document.getElementById(id);
-        if (element == null) {
-            return;
-        }
-        if (value == null) {
-            element.removeAttribute(name);
-        } else {
-            element.setAttribute(name, value);
-        }
-    }
-
-    protected static void disabled(Document document, String id, boolean disabled) {
-        Element element = document.getElementById(id);
-        if (element != null) {
-            element.setDisabled(disabled);
-        }
-    }
-
-    protected static void className(Document document, String id, String className) {
-        Element element = document.getElementById(id);
-        if (element != null) {
-            element.setClassName(className);
-        }
+    protected static String data(JsonObject object, String name) {
+        JsonElement value = object.get(name);
+        if (value == null || value.isJsonNull()) return "";
+        if (!value.isJsonPrimitive()) throw new IllegalArgumentException("Expected a scalar UI field: " + name);
+        return value.getAsString();
     }
 
     protected static String tr(String key, Object... arguments) {
         return Component.translatable(key, arguments).getString();
     }
 
-    protected static String escapeHtml(String value) {
-        if (value == null || value.isEmpty()) {
-            return "";
-        }
-        return value.replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;")
-                .replace("'", "&#39;");
-    }
-
-    private void dispatchAction(Document document, Event event) {
-        Element action = findActionElement(event.target);
-        if (action == null || action.isDisabled()) {
-            return;
-        }
-        String actionName = data(action, "action");
-        if (!actionName.isBlank()) {
-            handleAction(document, action, actionName);
+    protected static int integerData(JsonObject object, String name) {
+        try {
+            return new BigDecimal(data(object, name)).intValueExact();
+        } catch (ArithmeticException | NumberFormatException invalidValue) {
+            throw new IllegalArgumentException("Expected an integer UI field: " + name, invalidValue);
         }
     }
 
-    private void dispatchInput(Document document, Event event) {
-        if (event.target instanceof Element input && !input.isDisabled()) {
-            handleInput(document, input);
+    private void receive(Document document, Event event, boolean input) {
+        try {
+            JsonElement payload = JsonParser.parseString(String.valueOf(event.detail));
+            if (!payload.isJsonObject()) throw new IllegalArgumentException("Expected a UI event object");
+            JsonObject data = payload.getAsJsonObject();
+            if (input) handleInput(document, data);
+            else handleAction(document, data, data(data, "action"));
+        } catch (JsonParseException | IllegalArgumentException invalidInput) {
+            RuntimeDiagnostics.warn("aui_invalid_event", getClass().getSimpleName() + ": " + invalidInput.getMessage());
+            renderFresh(document);
         }
     }
 
-    private void renderIfCurrent(Document document) {
+    private void renderFresh(Document document) {
         if (document == getLinkedDocument()) {
+            publishedState = "";
             clearBrowserSelection();
             renderDocument(document);
         }
@@ -165,25 +120,9 @@ public abstract class InteractiveAuiScreen extends ApricityScreen {
 
     private void clearBrowserSelection() {
         Document document = getLinkedDocument();
-        if (document == null) {
-            return;
-        }
-        document.clearAllTextSelections();
+        if (document == null) return;
+        document.clearAllTextSelectionsExcept(document.getFocusedElement());
         document.clearDocumentSelection();
         document.clearRichTextSelection();
-    }
-
-    private static Element findActionElement(Object target) {
-        if (!(target instanceof Element element)) {
-            return null;
-        }
-        Element current = element;
-        while (current != null) {
-            if (current.hasAttribute("data-action")) {
-                return current;
-            }
-            current = current.parentElement;
-        }
-        return null;
     }
 }

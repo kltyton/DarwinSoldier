@@ -139,6 +139,10 @@ mixin {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
+    exclusiveContent {
+        forRepository { flatDir { name = 'localAui'; dirs 'libs/aui' } }
+        filter { includeVersion 'com.sighs', 'ApricityUI-forge-1.20.1', '1.2.4-hotfix' }
+    }
     // Put repositories for dependencies here
     // ForgeGradle automatically adds the Forge maven and Maven Central for you
 
@@ -188,10 +192,15 @@ dependencies {
     implementation fg.deobf("curse.maven:legendary-survival-overhaul-840254:8450364")
     implementation fg.deobf("curse.maven:thirst-was-taken-679270:6660408")
     implementation fg.deobf("curse.maven:timeless-and-classics-zero-1028108:8141310-sources-8141355")
-    implementation fg.deobf("com.sighs:ApricityUI-forge-1.20.1:1.2.3")
-    jarJar("com.sighs:ApricityUI-forge-1.20.1:1.2.3") {
+    implementation fg.deobf("com.sighs:ApricityUI-forge-1.20.1:1.2.4-hotfix")
+    jarJar("com.sighs:ApricityUI-forge-1.20.1:1.2.4-hotfix") {
         transitive = false
-        jarJar.ranged(it, "[1.2.3,2.0)")
+        jarJar.ranged(it, "[1.2.4-hotfix,2.0)")
+    }
+    implementation fg.deobf('curse.maven:rhino-416294:6186971')
+    jarJar('curse.maven:rhino-416294:6186971') {
+        transitive = false
+        jarJar.ranged(it, '[6186971,)')
     }
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'

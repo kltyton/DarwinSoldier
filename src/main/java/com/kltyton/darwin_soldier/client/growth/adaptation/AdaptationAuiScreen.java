@@ -1,11 +1,12 @@
 package com.kltyton.darwin_soldier.client.growth.adaptation;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.kltyton.darwin_soldier.client.ClientGrowthData;
 import com.kltyton.darwin_soldier.client.ui.foundation.InteractiveAuiScreen;
 import com.kltyton.darwin_soldier.network.ModNetwork;
 import com.kltyton.darwin_soldier.network.SyncGrowthDataPacket;
 import com.sighs.apricityui.init.Document;
-import com.sighs.apricityui.init.Element;
 import net.minecraft.client.gui.screens.Screen;
 
 import java.util.Comparator;
@@ -37,32 +38,48 @@ public final class AdaptationAuiScreen extends InteractiveAuiScreen {
         page = Math.min(page, pageCount - 1);
         int from = Math.min(entries.size(), page * PAGE_SIZE);
         int to = Math.min(entries.size(), from + PAGE_SIZE);
-        if (entries.isEmpty()) {
-            html(document, "adaptation-list", "<div class=\"darwin-empty\">"
-                    + escapeHtml(tr("screen.darwin_soldier.no_adaptations")) + "</div>");
-        } else {
-            html(document, "adaptation-list", table(entries.subList(from, to)));
+        JsonObject state = new JsonObject();
+        state.addProperty("title", tr("screen.darwin_soldier.adaptations.title"));
+        state.addProperty("closeLabel", tr("gui.done"));
+        state.addProperty("closeAction", "back");
+        state.addProperty("emptyText", tr("screen.darwin_soldier.no_adaptations"));
+        state.addProperty("nameLabel", tr("screen.darwin_soldier.aui.adaptation"));
+        state.addProperty("idLabel", tr("screen.darwin_soldier.aui.registry_id"));
+        state.addProperty("levelLabel", tr("screen.darwin_soldier.aui.level"));
+        state.addProperty("actionLabel", tr("screen.darwin_soldier.aui.action"));
+        state.addProperty("previousLabel", tr("screen.darwin_soldier.aui.previous"));
+        state.addProperty("nextLabel", tr("screen.darwin_soldier.aui.next"));
+        state.addProperty("pageSummary", tr("screen.darwin_soldier.aui.page_summary", page + 1, pageCount, entries.size()));
+        state.addProperty("previousDisabled", page == 0);
+        state.addProperty("nextDisabled", page + 1 >= pageCount);
+        JsonArray rows = new JsonArray();
+        for (SyncGrowthDataPacket.AdaptationEntry entry : entries.subList(from, to)) {
+            JsonObject row = new JsonObject();
+            row.addProperty("key", entry.key());
+            row.addProperty("name", entry.displayName());
+            row.addProperty("id", entry.targetId());
+            row.addProperty("detail", tr("screen.darwin_soldier.adaptation_detail",
+                    entry.targetId(), entry.level(), entry.reductionPercent()));
+            row.addProperty("enabled", entry.enabled());
+            row.addProperty("pending", pendingKeys.contains(entry.key()));
+            row.addProperty("actionLabel", tr(entry.enabled()
+                    ? "screen.darwin_soldier.enabled" : "screen.darwin_soldier.disabled"));
+            rows.add(row);
         }
-        text(document, "adaptation-page-summary", tr("screen.darwin_soldier.aui.page_summary",
-                page + 1, pageCount, entries.size()));
-        disabled(document, "adaptation-previous", page == 0);
-        disabled(document, "adaptation-next", page + 1 >= pageCount);
+        state.add("entries", rows);
+        publishState(document, state);
     }
 
     @Override
-    protected void handleAction(Document document, Element action, String actionName) {
+    protected void handleAction(Document document, JsonObject action, String actionName) {
         switch (actionName) {
             case "back" -> onClose();
             case "previous-page" -> page = Math.max(0, page - 1);
             case "next-page" -> page++;
             case "toggle-adaptation" -> toggle(data(action, "key"));
-            default -> {
-                return;
-            }
+            default -> { return; }
         }
-        if (!"back".equals(actionName)) {
-            renderNow();
-        }
+        if (!"back".equals(actionName)) renderNow();
     }
 
     @Override
@@ -75,6 +92,7 @@ public final class AdaptationAuiScreen extends InteractiveAuiScreen {
     }
 
     private void toggle(String key) {
+        if (pendingKeys.contains(key)) return;
         sortedEntries().stream()
                 .filter(entry -> entry.key().equals(key))
                 .findFirst()
@@ -90,29 +108,5 @@ public final class AdaptationAuiScreen extends InteractiveAuiScreen {
                                 String.CASE_INSENSITIVE_ORDER)
                         .thenComparing(SyncGrowthDataPacket.AdaptationEntry::targetId))
                 .toList();
-    }
-
-    private String table(List<SyncGrowthDataPacket.AdaptationEntry> entries) {
-        StringBuilder rows = new StringBuilder("<div class=\"table-wrap\"><table class=\"table darwin-table darwin-adaptation-table\"><thead><tr><th>")
-                .append(escapeHtml(tr("screen.darwin_soldier.aui.adaptation"))).append("</th><th>")
-                .append(escapeHtml(tr("screen.darwin_soldier.aui.registry_id"))).append("</th><th>")
-                .append(escapeHtml(tr("screen.darwin_soldier.aui.level"))).append("</th><th>")
-                .append(escapeHtml(tr("screen.darwin_soldier.aui.action"))).append("</th></tr></thead><tbody>");
-        for (SyncGrowthDataPacket.AdaptationEntry entry : entries) {
-            boolean pending = pendingKeys.contains(entry.key());
-            rows.append("<tr><td>").append(escapeHtml(entry.displayName())).append("</td><td><code>")
-                    .append(escapeHtml(entry.targetId())).append("</code></td><td>")
-                    .append(escapeHtml(tr("screen.darwin_soldier.adaptation_detail",
-                            entry.targetId(), entry.level(), entry.reductionPercent())))
-                    .append("</td><td><button class=\"button button-small ")
-                    .append(entry.enabled() ? "button-primary" : "button-normal")
-                    .append("\" type=\"button\" data-action=\"toggle-adaptation\" data-key=\"")
-                    .append(escapeHtml(entry.key())).append("\"");
-            if (pending) rows.append(" disabled");
-            rows.append('>').append(escapeHtml(tr(entry.enabled()
-                    ? "screen.darwin_soldier.enabled" : "screen.darwin_soldier.disabled")))
-                    .append("</button></td></tr>");
-        }
-        return rows.append("</tbody></table></div>").toString();
     }
 }

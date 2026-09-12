@@ -1,10 +1,11 @@
 package com.kltyton.darwin_soldier.client.ui.config;
 
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.kltyton.darwin_soldier.client.ui.foundation.InteractiveAuiScreen;
 import com.kltyton.darwin_soldier.config.DarwinConfig;
 import com.sighs.apricityui.init.Document;
-import com.sighs.apricityui.init.Element;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.common.ForgeConfigSpec;
 
@@ -35,22 +36,57 @@ public final class DarwinConfigAuiScreen extends InteractiveAuiScreen {
 
     @Override
     protected void renderDocument(Document document) {
-        if (activeCategory == null) {
-            showError(document, tr("screen.darwin_soldier.aui.config_empty"));
-            return;
+        JsonObject state = new JsonObject();
+        state.addProperty("title", tr("config.darwin_soldier.title"));
+        state.addProperty("closeLabel", tr("gui.cancel"));
+        state.addProperty("closeAction", "cancel");
+        state.addProperty("activeCategory", activeCategory == null ? "" : activeCategory);
+        state.addProperty("activeCategoryLabel", activeCategory == null ? ""
+                : tr("config.darwin_soldier.category." + activeCategory));
+        state.addProperty("categoriesTitle", tr("screen.darwin_soldier.aui.categories"));
+        state.addProperty("error", activeCategory == null ? tr("screen.darwin_soldier.aui.config_empty") : errorMessage);
+        state.addProperty("resetLabel", tr("screen.darwin_soldier.aui.reset_category"));
+        state.addProperty("cancelLabel", tr("gui.cancel"));
+        state.addProperty("saveLabel", tr("gui.done"));
+        state.addProperty("invalidLabel", tr("screen.darwin_soldier.aui.invalid_value"));
+        JsonArray categories = new JsonArray();
+        for (String category : fieldsByCategory.keySet()) {
+            JsonObject item = new JsonObject();
+            item.addProperty("key", category);
+            item.addProperty("label", tr("config.darwin_soldier.category." + category));
+            categories.add(item);
         }
-        html(document, "config-categories", categoryMarkup());
-        text(document, "config-category-title", tr("config.darwin_soldier.category." + activeCategory));
-        html(document, "config-fields", fieldsMarkup(fieldsByCategory.getOrDefault(activeCategory, List.of())));
-        showError(document, errorMessage);
+        state.add("categories", categories);
+        JsonArray fields = new JsonArray();
+        for (Field field : fieldsByCategory.getOrDefault(activeCategory, List.of())) {
+            JsonObject item = new JsonObject();
+            item.addProperty("key", field.key);
+            item.addProperty("label", tr(optionTranslationKey(field.id)));
+            item.addProperty("kind", field.kind().name().toLowerCase(Locale.ROOT));
+            item.addProperty("value", rawValues.getOrDefault(field.key, ""));
+            item.addProperty("defaultValue", tr("screen.darwin_soldier.aui.default_value", serialize(field.value.getDefault())));
+            item.addProperty("invalid", invalidKeys.contains(field.key));
+            if (field.kind() == Kind.INTEGER || field.kind() == Kind.DOUBLE) {
+                item.addProperty("step", numberStep(field.value.getDefault()));
+                if (field.spec.getRange() != null) {
+                    item.addProperty("min", String.valueOf(field.spec.getRange().getMin()));
+                    item.addProperty("max", String.valueOf(field.spec.getRange().getMax()));
+                }
+            }
+            fields.add(item);
+        }
+        state.add("fields", fields);
+        publishState(document, state);
     }
 
     @Override
-    protected void handleAction(Document document, Element action, String actionName) {
+    protected void handleAction(Document document, JsonObject action, String actionName) {
         switch (actionName) {
             case "cancel" -> onClose();
             case "select-category" -> {
-                activeCategory = data(action, "category");
+                String category = data(action, "category");
+                if (!fieldsByCategory.containsKey(category)) return;
+                activeCategory = category;
                 errorMessage = "";
             }
             case "toggle-config" -> toggleBoolean(data(action, "key"));
@@ -71,7 +107,7 @@ public final class DarwinConfigAuiScreen extends InteractiveAuiScreen {
     }
 
     @Override
-    protected void handleInput(Document document, Element input) {
+    protected void handleInput(Document document, JsonObject input) {
         if (!"config".equals(data(input, "input"))) {
             return;
         }
@@ -80,10 +116,11 @@ public final class DarwinConfigAuiScreen extends InteractiveAuiScreen {
         if (field == null) {
             return;
         }
-        rawValues.put(key, input.getValue());
-        boolean valid = validate(field, input.getValue()) != null;
+        String value = data(input, "value");
+        rawValues.put(key, value);
+        boolean valid = validate(field, value) != null;
         if (valid) invalidKeys.remove(key); else invalidKeys.add(key);
-        input.setClassName(inputClass(field, valid));
+        renderNow();
     }
 
     private void loadCatalog() {
@@ -119,71 +156,6 @@ public final class DarwinConfigAuiScreen extends InteractiveAuiScreen {
         }
     }
 
-    private String categoryMarkup() {
-        StringBuilder markup = new StringBuilder();
-        for (String category : fieldsByCategory.keySet()) {
-            markup.append("<button class=\"list-group-item")
-                    .append(category.equals(activeCategory) ? " active" : "")
-                    .append("\" type=\"button\" data-action=\"select-category\" data-category=\"")
-                    .append(escapeHtml(category)).append("\">")
-                    .append(escapeHtml(tr("config.darwin_soldier.category." + category)))
-                    .append("</button>");
-        }
-        return markup.toString();
-    }
-
-    private String fieldsMarkup(List<Field> fields) {
-        StringBuilder markup = new StringBuilder();
-        for (Field field : fields) {
-            boolean valid = !invalidKeys.contains(field.key);
-            String raw = rawValues.getOrDefault(field.key, "");
-            markup.append("<div class=\"darwin-config-field\"><label class=\"form-label\" for=\"")
-                    .append(field.elementId()).append("\">")
-                    .append(escapeHtml(tr(optionTranslationKey(field.id)))).append("</label>");
-            switch (field.kind()) {
-                case BOOLEAN -> markup.append(booleanButton(field, Boolean.parseBoolean(raw)));
-                case INTEGER, DOUBLE, STRING -> markup.append("<input id=\"").append(field.elementId())
-                        .append("\" class=\"").append(inputClass(field, valid))
-                        .append("\" type=\"").append(field.kind() == Kind.STRING ? "text" : "number")
-                        .append("\" value=\"").append(escapeHtml(raw)).append("\" data-input=\"config\" data-key=\"")
-                        .append(escapeHtml(field.key)).append("\"").append(rangeAttributes(field)).append(">");
-                case STRING_LIST -> markup.append("<textarea id=\"").append(field.elementId())
-                        .append("\" class=\"").append(inputClass(field, valid))
-                        .append("\" data-input=\"config\" data-key=\"").append(escapeHtml(field.key))
-                        .append("\">").append(escapeHtml(raw)).append("</textarea>");
-            }
-            markup.append("<div class=\"form-help\">")
-                    .append(escapeHtml(tr("screen.darwin_soldier.aui.default_value",
-                            serialize(field.value.getDefault())))).append("</div>");
-            if (!valid) {
-                markup.append("<div class=\"form-help text-danger\">")
-                        .append(escapeHtml(tr("screen.darwin_soldier.aui.invalid_value"))).append("</div>");
-            }
-            markup.append("</div>");
-        }
-        return markup.toString();
-    }
-
-    private String booleanButton(Field field, boolean enabled) {
-        String label = tr("screen.darwin_soldier.targets.filter_state",
-                tr(optionTranslationKey(field.id)),
-                tr(enabled ? "screen.darwin_soldier.enabled" : "screen.darwin_soldier.disabled"));
-        return "<button id=\"" + field.elementId() + "\" class=\"button "
-                + (enabled ? "button-primary" : "button-normal")
-                + "\" type=\"button\" data-action=\"toggle-config\" data-key=\""
-                + escapeHtml(field.key) + "\">" + escapeHtml(label) + "</button>";
-    }
-
-    private String rangeAttributes(Field field) {
-        ForgeConfigSpec.Range<?> range = field.spec.getRange();
-        if (range == null) {
-            return "";
-        }
-        String step = numberStep(field.value.getDefault());
-        return " min=\"" + escapeHtml(String.valueOf(range.getMin())) + "\" max=\""
-                + escapeHtml(String.valueOf(range.getMax())) + "\" step=\"" + step + "\"";
-    }
-
     static String numberStep(Object defaultValue) {
         if (defaultValue instanceof Integer) {
             return "1";
@@ -202,10 +174,6 @@ public final class DarwinConfigAuiScreen extends InteractiveAuiScreen {
         return "config.darwin_soldier.option." + normalized;
     }
 
-    private String inputClass(Field field, boolean valid) {
-        String base = field.kind() == Kind.STRING_LIST ? "form-textarea" : "form-input";
-        return valid ? base : base + " is-invalid";
-    }
 
     private void toggleBoolean(String key) {
         Field field = fieldsByKey.get(key);
@@ -261,14 +229,6 @@ public final class DarwinConfigAuiScreen extends InteractiveAuiScreen {
         }
     }
 
-    private void showError(Document document, String message) {
-        errorMessage = message == null ? "" : message;
-        className(document, "config-error", errorMessage.isBlank()
-                ? "alert alert-danger darwin-config-error hidden"
-                : "alert alert-danger darwin-config-error");
-        text(document, "config-error", errorMessage);
-    }
-
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static void setConfigValue(ForgeConfigSpec.ConfigValue<?> value, Object parsed) {
         ((ForgeConfigSpec.ConfigValue) value).set(parsed);
@@ -296,8 +256,5 @@ public final class DarwinConfigAuiScreen extends InteractiveAuiScreen {
             return Kind.STRING;
         }
 
-        private String elementId() {
-            return "config-" + key.toLowerCase(Locale.ROOT).replace('.', '-').replace('_', '-');
-        }
     }
 }

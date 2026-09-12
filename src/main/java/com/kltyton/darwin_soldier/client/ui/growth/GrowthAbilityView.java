@@ -1,5 +1,7 @@
 package com.kltyton.darwin_soldier.client.ui.growth;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.kltyton.darwin_soldier.client.ClientGrowthData;
 import com.kltyton.darwin_soldier.config.DarwinConfig;
 import net.minecraft.client.Minecraft;
@@ -11,58 +13,60 @@ final class GrowthAbilityView {
     private GrowthAbilityView() {
     }
 
-    static String tabs(Tab selected) {
-        StringBuilder markup = new StringBuilder();
+    static JsonArray tabs(Tab selected) {
+        JsonArray tabs = new JsonArray();
         for (Tab tab : Tab.values()) {
             int requirement = Math.max(0, tab.requirement());
             int current = Math.max(0, tab.points());
-            int shownCurrent = Math.min(current, requirement);
-            int percent = requirement == 0 ? 100 : Math.min(100, (int) Math.round(current * 100.0D / requirement));
-            boolean enabled = tab.featureEnabled() && tab.unlocked();
-            String classes = "darwin-ability-tab" + (selected == tab ? " active" : "");
-            markup.append("<button id=\"ability-tab-").append(tab.name()).append("\" class=\"")
-                    .append(classes).append("\" type=\"button\" role=\"tab\" data-action=\"select-ability\" data-tab=\"")
-                    .append(tab.name()).append("\"");
-            if (!enabled) markup.append(" disabled");
-            markup.append("><texture src=\"darwin_soldier:textures/gui/skills/")
-                    .append(tab.textureName).append(enabled ? ".png" : "_locked.png").append("\">")
-                    .append("<span class=\"darwin-ability-title font-display\">").append(e(tr(tab.titleKey))).append("</span>")
-                    .append("<div class=\"progress").append(selected == tab ? " progress-purple" : "").append("\"><div class=\"progress-bar\" style=\"width:")
-                    .append(percent).append("%\"></div></div>")
-                    .append("<span class=\"darwin-ability-progress-text\">")
-                    .append(e(tr(tab.attributeKey))).append(' ').append(shownCurrent).append('/').append(requirement)
-                    .append("</span></button>");
+            boolean available = tab.featureEnabled() && tab.unlocked();
+            JsonObject entry = new JsonObject();
+            entry.addProperty("id", tab.name());
+            entry.addProperty("title", tr(tab.titleKey));
+            entry.addProperty("attribute", tr(tab.attributeKey));
+            entry.addProperty("texture", "darwin_soldier:textures/gui/skills/"
+                    + tab.textureName + (available ? ".png" : "_locked.png"));
+            entry.addProperty("current", Math.min(current, requirement));
+            entry.addProperty("requirement", requirement);
+            entry.addProperty("percent", requirement == 0 ? 100
+                    : Math.min(100, (int) Math.round(current * 100.0D / requirement)));
+            entry.addProperty("selected", selected == tab);
+            entry.addProperty("available", available);
+            tabs.add(entry);
         }
-        return markup.toString();
+        return tabs;
     }
 
-    static String detail(Tab tab, Minecraft minecraft) {
-        StringBuilder markup = new StringBuilder();
+    static JsonObject detail(Tab tab, Minecraft minecraft) {
+        JsonObject detail = new JsonObject();
+        detail.addProperty("id", tab.name());
+        detail.addProperty("title", tr(tab.titleKey));
+        detail.add("lines", new JsonArray());
+        detail.add("actions", new JsonArray());
         switch (tab) {
-            case DAMAGE_ADAPTATION -> adaptation(markup);
-            case HUNTING_INSTINCT -> hunting(markup, minecraft);
-            case STRESS_EVOLUTION -> stress(markup, minecraft);
-            case SUPER_PERCEPTION -> perception(markup, minecraft);
-            case BATTLE_INSTINCT -> battle(markup);
-            case EFFICIENT_METABOLISM -> metabolism(markup);
-            case NUTRITION_FULLNESS -> fullness(markup, minecraft);
+            case DAMAGE_ADAPTATION -> adaptation(detail);
+            case HUNTING_INSTINCT -> hunting(detail, minecraft);
+            case STRESS_EVOLUTION -> stress(detail, minecraft);
+            case SUPER_PERCEPTION -> perception(detail, minecraft);
+            case BATTLE_INSTINCT -> battle(detail);
+            case EFFICIENT_METABOLISM -> metabolism(detail);
+            case NUTRITION_FULLNESS -> fullness(detail, minecraft);
         }
-        return markup.toString();
+        return detail;
     }
 
-    private static void adaptation(StringBuilder out) {
+    private static void adaptation(JsonObject out) {
         line(out, tr("screen.darwin_soldier.unlocked", yesNo(ClientGrowthData.isDamageAdaptationUnlocked())));
         line(out, tr("screen.darwin_soldier.ability_enabled", yesNo(ClientGrowthData.isDamageAdaptationEnabled())));
         muted(out, tr("screen.darwin_soldier.adaptations.summary", ClientGrowthData.getAdaptationEntries().size()));
         muted(out, tr("screen.darwin_soldier.adaptations.rules"));
         if (ClientGrowthData.isAdaptationFeatureEnabled() && ClientGrowthData.isDamageAdaptationUnlocked()) {
-            actions(out, toggleAbility("DAMAGE_ADAPTATION", ClientGrowthData.isDamageAdaptationEnabled())
-                    + button("button button-secondary", "open-adaptations",
-                    tr("screen.darwin_soldier.adaptations.open", ClientGrowthData.getAdaptationEntries().size()), ""));
+            actions(out, toggleAbility("DAMAGE_ADAPTATION", ClientGrowthData.isDamageAdaptationEnabled()),
+                    button("open-adaptations",
+                    tr("screen.darwin_soldier.adaptations.open", ClientGrowthData.getAdaptationEntries().size())));
         }
     }
 
-    private static void hunting(StringBuilder out, Minecraft minecraft) {
+    private static void hunting(JsonObject out, Minecraft minecraft) {
         line(out, tr("screen.darwin_soldier.unlocked", yesNo(ClientGrowthData.isHuntingInstinctUnlocked())));
         line(out, tr("screen.darwin_soldier.ability_enabled", yesNo(ClientGrowthData.isHuntingInstinctEnabled())));
         line(out, tr("screen.darwin_soldier.hunting_state", huntingStatus(minecraft)));
@@ -74,18 +78,17 @@ final class GrowthAbilityView {
         muted(out, tr("screen.darwin_soldier.hunting_params"));
         muted(out, tr("screen.darwin_soldier.hunting_internal_desc"));
         if (ClientGrowthData.isHuntingInstinctFeatureEnabled() && ClientGrowthData.isHuntingInstinctUnlocked()) {
-            String buttons = toggleAbility("HUNTING_INSTINCT", ClientGrowthData.isHuntingInstinctEnabled());
+            actions(out, toggleAbility("HUNTING_INSTINCT", ClientGrowthData.isHuntingInstinctEnabled()));
             if (ClientGrowthData.isHuntingInternalImpactFeatureEnabled()) {
-                buttons += button("button button-secondary", "toggle-hunting-impact",
+                actions(out, button("toggle-hunting-impact",
                         tr(ClientGrowthData.isHuntingInternalImpactEnabled()
                                 ? "screen.darwin_soldier.internal_impact_on"
-                                : "screen.darwin_soldier.internal_impact_off"), "");
+                                : "screen.darwin_soldier.internal_impact_off")));
             }
-            actions(out, buttons);
         }
     }
 
-    private static void stress(StringBuilder out, Minecraft minecraft) {
+    private static void stress(JsonObject out, Minecraft minecraft) {
         line(out, tr("screen.darwin_soldier.unlocked", yesNo(ClientGrowthData.isStressEvolutionUnlocked())));
         line(out, tr("screen.darwin_soldier.ability_enabled", yesNo(ClientGrowthData.isStressEvolutionEnabled())));
         line(out, tr("screen.darwin_soldier.cooldown",
@@ -98,7 +101,7 @@ final class GrowthAbilityView {
         }
     }
 
-    private static void perception(StringBuilder out, Minecraft minecraft) {
+    private static void perception(JsonObject out, Minecraft minecraft) {
         line(out, tr("screen.darwin_soldier.unlocked", yesNo(ClientGrowthData.isSuperPerceptionUnlocked())));
         line(out, tr("screen.darwin_soldier.ability_enabled", yesNo(ClientGrowthData.isSuperPerceptionEnabled())));
         Component weapon = minecraft != null && minecraft.player != null
@@ -109,13 +112,13 @@ final class GrowthAbilityView {
         muted(out, tr("screen.darwin_soldier.super_perception_desc_2"));
         muted(out, tr("screen.darwin_soldier.targets.summary", DarwinConfig.SUPER_PERCEPTION_WHITELIST.get().size()));
         if (ClientGrowthData.isSuperPerceptionUnlocked()) {
-            actions(out, toggleAbility("SUPER_PERCEPTION", ClientGrowthData.isSuperPerceptionEnabled())
-                    + button("button button-secondary", "open-aim", tr("screen.darwin_soldier.aim_settings"), "")
-                    + button("button button-tertiary", "open-targets", tr("screen.darwin_soldier.targets.open"), ""));
+            actions(out, toggleAbility("SUPER_PERCEPTION", ClientGrowthData.isSuperPerceptionEnabled()),
+                    button("open-aim", tr("screen.darwin_soldier.aim_settings")),
+                    button("open-targets", tr("screen.darwin_soldier.targets.open")));
         }
     }
 
-    private static void battle(StringBuilder out) {
+    private static void battle(JsonObject out) {
         line(out, tr("screen.darwin_soldier.unlocked", yesNo(ClientGrowthData.isBattleInstinctUnlocked())));
         line(out, tr("screen.darwin_soldier.battle_instinct_status",
                 tr(ClientGrowthData.isBattleInstinctEnabled()
@@ -128,15 +131,15 @@ final class GrowthAbilityView {
                         : "screen.darwin_soldier.battle_mode_dodge_only")));
         muted(out, tr("screen.darwin_soldier.battle_instinct_mode_desc"));
         if (ClientGrowthData.isBattleInstinctFeatureEnabled() && ClientGrowthData.isBattleInstinctUnlocked()) {
-            actions(out, toggleAbility("BATTLE_INSTINCT", ClientGrowthData.isBattleInstinctEnabled())
-                    + button("button button-secondary", "toggle-battle-mode",
+            actions(out, toggleAbility("BATTLE_INSTINCT", ClientGrowthData.isBattleInstinctEnabled()),
+                    button("toggle-battle-mode",
                     tr(ClientGrowthData.isBattleInstinctCounterEnabled()
                             ? "screen.darwin_soldier.battle_mode_normal"
-                            : "screen.darwin_soldier.battle_mode_dodge_only"), ""));
+                            : "screen.darwin_soldier.battle_mode_dodge_only")));
         }
     }
 
-    private static void metabolism(StringBuilder out) {
+    private static void metabolism(JsonObject out) {
         line(out, tr("screen.darwin_soldier.unlocked", yesNo(ClientGrowthData.isEfficientMetabolismUnlocked())));
         line(out, tr("screen.darwin_soldier.ability_enabled", yesNo(ClientGrowthData.isEfficientMetabolismEnabled())));
         muted(out, tr("screen.darwin_soldier.metabolism_description"));
@@ -150,7 +153,7 @@ final class GrowthAbilityView {
         }
     }
 
-    private static void fullness(StringBuilder out, Minecraft minecraft) {
+    private static void fullness(JsonObject out, Minecraft minecraft) {
         line(out, tr("screen.darwin_soldier.unlocked", yesNo(ClientGrowthData.isNutritionFullnessUnlocked())));
         line(out, tr("screen.darwin_soldier.ability_enabled", yesNo(ClientGrowthData.isNutritionFullnessEnabled())));
         line(out, tr("screen.darwin_soldier.current_status", tr(ClientGrowthData.isNutritionFullnessActive()
@@ -170,27 +173,38 @@ final class GrowthAbilityView {
         }
     }
 
-    private static String toggleAbility(String ability, boolean enabled) {
-        return button("button", "toggle-ability",
-                tr(enabled ? "screen.darwin_soldier.disable" : "screen.darwin_soldier.enable"),
-                " data-ability=\"" + ability + "\"");
+    private static JsonObject toggleAbility(String ability, boolean enabled) {
+        JsonObject action = button("toggle-ability",
+                tr(enabled ? "screen.darwin_soldier.disable" : "screen.darwin_soldier.enable"));
+        action.addProperty("ability", ability);
+        action.addProperty("enabled", enabled);
+        return action;
     }
 
-    private static String button(String classes, String action, String label, String extra) {
-        return "<button class=\"" + classes + "\" type=\"button\" data-action=\"" + action + "\""
-                + extra + ">" + e(label) + "</button>";
+    private static JsonObject button(String action, String label) {
+        JsonObject result = new JsonObject();
+        result.addProperty("action", action);
+        result.addProperty("label", label);
+        return result;
     }
 
-    private static void actions(StringBuilder out, String buttons) {
-        out.append("<div class=\"darwin-action-row\">").append(buttons).append("</div>");
+    private static void actions(JsonObject detail, JsonObject... actions) {
+        for (JsonObject action : actions) detail.getAsJsonArray("actions").add(action);
     }
 
-    private static void line(StringBuilder out, String value) {
-        out.append("<div>").append(e(value)).append("</div>");
+    private static void line(JsonObject detail, String value) {
+        addLine(detail, value, false);
     }
 
-    private static void muted(StringBuilder out, String value) {
-        out.append("<div class=\"text-muted\">").append(e(value)).append("</div>");
+    private static void muted(JsonObject detail, String value) {
+        addLine(detail, value, true);
+    }
+
+    private static void addLine(JsonObject detail, String text, boolean muted) {
+        JsonObject line = new JsonObject();
+        line.addProperty("text", text);
+        line.addProperty("muted", muted);
+        detail.getAsJsonArray("lines").add(line);
     }
 
     private static String cooldown(Minecraft minecraft, long cooldownUntil) {
@@ -227,11 +241,6 @@ final class GrowthAbilityView {
 
     private static String tr(String key, Object... arguments) {
         return Component.translatable(key, arguments).getString();
-    }
-
-    private static String e(String value) {
-        return value == null ? "" : value.replace("&", "&amp;").replace("<", "&lt;")
-                .replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;");
     }
 
     enum Tab {
