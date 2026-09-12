@@ -80,10 +80,12 @@ final class GrowthAbilityView {
         if (ClientGrowthData.isHuntingInstinctFeatureEnabled() && ClientGrowthData.isHuntingInstinctUnlocked()) {
             actions(out, toggleAbility("HUNTING_INSTINCT", ClientGrowthData.isHuntingInstinctEnabled()));
             if (ClientGrowthData.isHuntingInternalImpactFeatureEnabled()) {
-                actions(out, button("toggle-hunting-impact",
+                JsonObject impact = button("toggle-hunting-impact",
                         tr(ClientGrowthData.isHuntingInternalImpactEnabled()
                                 ? "screen.darwin_soldier.internal_impact_on"
-                                : "screen.darwin_soldier.internal_impact_off")));
+                                : "screen.darwin_soldier.internal_impact_off"));
+                impact.addProperty("enabled", ClientGrowthData.isHuntingInternalImpactEnabled());
+                actions(out, impact);
             }
         }
     }
@@ -175,7 +177,7 @@ final class GrowthAbilityView {
 
     private static JsonObject toggleAbility(String ability, boolean enabled) {
         JsonObject action = button("toggle-ability",
-                tr(enabled ? "screen.darwin_soldier.disable" : "screen.darwin_soldier.enable"));
+                tr("screen.darwin_soldier.enable"));
         action.addProperty("ability", ability);
         action.addProperty("enabled", enabled);
         return action;

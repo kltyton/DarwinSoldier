@@ -61,6 +61,8 @@
 .darwin-ability-line { line-height: 1.5; overflow-wrap: anywhere; }
 .darwin-action-row, .darwin-aim-controls { display: flex; gap: 12px; flex-wrap: wrap; }
 .darwin-action-row > button { flex: 1 1 0; min-width: 120px; }
+.darwin-ability-switch { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: 1 1 0; min-width: 160px; }
+.darwin-ability-switch > .switch_content { flex: 0 0 auto; }
 .darwin-intel-item { color: var(--ore-neutral-text-dimmer); }
 .darwin-screen .darwin-intel-card .mc-panel__body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0; }
 .darwin-intel-column { min-width: 0; }

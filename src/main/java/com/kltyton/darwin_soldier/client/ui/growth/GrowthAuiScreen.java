@@ -73,9 +73,10 @@ public final class GrowthAuiScreen extends InteractiveAuiScreen {
                     integerData(action, "direction") * modifierStep());
             case "confirm-allocation" -> confirmAllocation();
             case "select-ability" -> activeTab = GrowthAbilityView.Tab.valueOf(data(action, "tab"));
-            case "toggle-ability" -> toggleAbility(data(action, "ability"));
+            case "toggle-ability" -> ModNetwork.sendAbilityToggle(AbilityType.valueOf(data(action, "ability")),
+                    Boolean.parseBoolean(data(action, "enabled")));
             case "toggle-hunting-impact" -> ModNetwork.sendAbilityToggle(AbilityType.HUNTING_INTERNAL_IMPACT,
-                    !ClientGrowthData.isHuntingInternalImpactEnabled());
+                    Boolean.parseBoolean(data(action, "enabled")));
             case "toggle-battle-mode" -> ModNetwork.sendBattleInstinctMode(!ClientGrowthData.isBattleInstinctCounterEnabled());
             case "open-aim" -> minecraft.setScreen(new AimAuiScreen(this));
             case "open-targets" -> minecraft.setScreen(new TargetingAuiScreen(this));
@@ -171,21 +172,6 @@ public final class GrowthAuiScreen extends InteractiveAuiScreen {
                 + stagedDefense + "/" + stagedPerception + "/" + stagedNutrition + " used=" + used() + " remaining=" + remaining());
         ModNetwork.sendAllocation(stagedHealth, stagedAttack, stagedDefense, stagedPerception, stagedNutrition);
         saveNotice = tr("screen.darwin_soldier.saved");
-    }
-
-    private void toggleAbility(String name) {
-        AbilityType ability = AbilityType.valueOf(name);
-        boolean enabled = switch (ability) {
-            case DAMAGE_ADAPTATION -> ClientGrowthData.isDamageAdaptationEnabled();
-            case HUNTING_INSTINCT -> ClientGrowthData.isHuntingInstinctEnabled();
-            case STRESS_EVOLUTION -> ClientGrowthData.isStressEvolutionEnabled();
-            case SUPER_PERCEPTION -> ClientGrowthData.isSuperPerceptionEnabled();
-            case BATTLE_INSTINCT -> ClientGrowthData.isBattleInstinctEnabled();
-            case EFFICIENT_METABOLISM -> ClientGrowthData.isEfficientMetabolismEnabled();
-            case NUTRITION_FULLNESS -> ClientGrowthData.isNutritionFullnessEnabled();
-            case HUNTING_INTERNAL_IMPACT -> ClientGrowthData.isHuntingInternalImpactEnabled();
-        };
-        ModNetwork.sendAbilityToggle(ability, !enabled);
     }
 
     private void syncFromClientData() {

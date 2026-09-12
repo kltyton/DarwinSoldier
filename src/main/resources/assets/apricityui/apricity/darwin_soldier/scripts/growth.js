@@ -8,9 +8,26 @@
             return h("p", { key: i, class: line.muted ? "darwin-ability-line text-muted" : "darwin-ability-line" }, line.text);
         });
         children.push(h("div", { class: "darwin-action-row" }, d.actions.map(function (a, i) {
-            return ui.button(a.label, a.action, a, {
-                key: i, disabled: a.disabled, "aria-pressed": a.action === "toggle-ability" ? String(a.enabled) : null
-            });
+            if (typeof a.enabled === "boolean") {
+                var change = function (value) {
+                    if (!a.disabled) ui.action(a.action, Object.assign({}, a, { enabled: value }));
+                };
+                return h("div", { key: i, class: "darwin-ability-switch" }, [
+                    h("span", null, a.label),
+                    h(Mc.McSwitch, {
+                        modelValue: a.enabled, disabled: a.disabled, tabindex: a.disabled ? -1 : 0,
+                        "aria-label": a.label, "data-action": a.action,
+                        "onUpdate:modelValue": change,
+                        onKeydown: function (event) {
+                            if (event.key === " " || event.key === "Enter") {
+                                event.preventDefault();
+                                change(!a.enabled);
+                            }
+                        }
+                    })
+                ]);
+            }
+            return ui.button(a.label, a.action, a, { key: i, disabled: a.disabled });
         })));
         return h("section", { class: "darwin-ability-detail-shell", role: "tabpanel", "aria-label": d.title }, [
             h("div", { class: "darwin-ability-copy" }, children)
