@@ -5,34 +5,16 @@
   <meta name="aui-font-mode" content="mc">
   <meta name="aui-viewport" content="mode=browser,zoom=1,min-zoom=1,max-zoom=1,user-scalable=false">
   <meta name="aui-mouse-events" content="intercept">
-  <title>Weapon Aim Settings</title>
+  <title>Darwin Soldier</title>
   <link rel="stylesheet" href="/apricityui/theme/ore/ore.css">
+  <link rel="stylesheet" href="/apricityui/theme/ore/mcui.css">
   <link rel="stylesheet" href="../styles/darwin.css">
 </head>
-<body class="ore-theme darwin-screen">
-  <header class="navbar darwin-header">
-    <div class="navbar-brand"><translation>screen.darwin_soldier.aim.title</translation></div>
-    <button class="button button-tertiary button-small" type="button" data-action="back"><translation>gui.back</translation></button>
-  </header>
-  <main class="container darwin-main">
-    <div id="aim-no-weapon" class="alert alert-danger hidden"><translation>screen.darwin_soldier.aim.no_weapon</translation></div>
-    <section id="aim-content" class="card card-accent-purple">
-      <div class="card-header" id="aim-weapon"></div>
-      <div class="card-body stack">
-        <div id="aim-weapon-id" class="text-muted"></div>
-        <div id="aim-ballistics" class="alert alert-info"></div>
-        <div class="cluster">
-          <button id="aim-mode" class="button" type="button" data-action="toggle-mode"></button>
-          <button id="aim-trajectory" class="button button-secondary" type="button" data-action="toggle-trajectory"></button>
-        </div>
-        <div id="aim-fields" class="darwin-fields"></div>
-      </div>
-      <div class="card-footer darwin-action-row">
-        <button class="button button-danger" type="button" data-action="reset"><translation>screen.darwin_soldier.aim.reset</translation></button>
-        <button class="button button-secondary" type="button" data-action="recalibrate"><translation>screen.darwin_soldier.aim.recalibrate</translation></button>
-        <button class="button button-tertiary" type="button" data-action="back"><translation>gui.back</translation></button>
-      </div>
-    </section>
-  </main>
+<body class="ore-theme darwin-screen darwin-aim-screen">
+  <div id="darwin-app"></div>
+  <script src="/apricityui/theme/ore/runtime/vue.aui.js"></script>
+  <script src="/apricityui/theme/ore/runtime/mcui-oreui.aui.js"></script>
+  <script src="../scripts/darwin.js"></script>
+  <script src="../scripts/aim.js"></script>
 </body>
 </html>

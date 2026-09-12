@@ -68,6 +68,19 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
     mavenCentral()
+    // Pin ApricityUI to the locally rebuilt snow HEAD.  This exclusive
+    // repository prevents the same version from resolving from the older
+    // remote Maven artifact or Gradle cache.
+    exclusiveContent {
+        forRepository {
+            flatDir {
+                dirs 'libs/aui'
+            }
+        }
+        filter {
+            includeModule 'com.sighs', 'ApricityUI-neoforge-1.21.1'
+        }
+    }
     maven {
         name = 'CurseMaven'
         url = 'https://cursemaven.com'

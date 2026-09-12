@@ -1,9 +1,10 @@
 package com.kltyton.darwin_soldier.client.growth.targeting;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.kltyton.darwin_soldier.client.ui.foundation.InteractiveAuiScreen;
 import com.kltyton.darwin_soldier.config.DarwinConfig;
 import com.sighs.apricityui.init.Document;
-import com.sighs.apricityui.init.Element;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.common.ModConfigSpec;
@@ -29,13 +30,36 @@ public final class TargetingAuiScreen extends InteractiveAuiScreen {
 
     @Override
     protected void renderDocument(Document document) {
-        html(document, "target-filters", filterMarkup());
-        value(document, "target-search", query);
-        renderList(document);
+        JsonObject state = new JsonObject();
+        state.addProperty("title", tr("screen.darwin_soldier.targets.title"));
+        state.addProperty("closeLabel", tr("gui.done"));
+        state.addProperty("closeAction", "back");
+        state.addProperty("filtersTitle", tr("screen.darwin_soldier.aui.target_filters"));
+        state.addProperty("listTitle", tr("screen.darwin_soldier.aui.entity_whitelist"));
+        state.addProperty("searchLabel", tr("screen.darwin_soldier.targets.search"));
+        state.addProperty("query", query);
+        state.addProperty("searchHint", tr("screen.darwin_soldier.targets.search_hint"));
+        state.addProperty("emptyText", tr("screen.darwin_soldier.targets.no_results"));
+        state.addProperty("entityLabel", tr("screen.darwin_soldier.aui.entity"));
+        state.addProperty("idLabel", tr("screen.darwin_soldier.aui.registry_id"));
+        state.addProperty("actionLabel", tr("screen.darwin_soldier.aui.action"));
+        state.addProperty("previousLabel", tr("screen.darwin_soldier.aui.previous"));
+        state.addProperty("nextLabel", tr("screen.darwin_soldier.aui.next"));
+        JsonArray filters = new JsonArray();
+        for (Filter filter : Filter.values()) {
+            JsonObject entry = new JsonObject();
+            entry.addProperty("id", filter.name());
+            entry.addProperty("enabled", filter.value.get());
+            entry.addProperty("label", tr(filter.translationKey));
+            filters.add(entry);
+        }
+        state.add("filters", filters);
+        populateList(state);
+        publishState(document, state);
     }
 
     @Override
-    protected void handleAction(Document document, Element action, String actionName) {
+    protected void handleAction(Document document, JsonObject action, String actionName) {
         switch (actionName) {
             case "back" -> onClose();
             case "toggle-filter" -> SuperPerceptionTargetSettings.toggle(
@@ -59,30 +83,16 @@ public final class TargetingAuiScreen extends InteractiveAuiScreen {
     }
 
     @Override
-    protected void handleInput(Document document, Element input) {
+    protected void handleInput(Document document, JsonObject input) {
         if (!"target-search".equals(data(input, "input"))) {
             return;
         }
-        query = input.getValue();
+        query = data(input, "value");
         page = 0;
-        renderList(document);
+        renderNow();
     }
 
-    private String filterMarkup() {
-        StringBuilder markup = new StringBuilder();
-        for (Filter filter : Filter.values()) {
-            boolean enabled = filter.value.get();
-            String label = tr("screen.darwin_soldier.targets.filter_state", tr(filter.translationKey),
-                    tr(enabled ? "screen.darwin_soldier.enabled" : "screen.darwin_soldier.disabled"));
-            markup.append("<button class=\"button ")
-                    .append(enabled ? "button-primary" : "button-normal")
-                    .append("\" type=\"button\" data-action=\"toggle-filter\" data-filter=\"")
-                    .append(filter.name()).append("\">").append(escapeHtml(label)).append("</button>");
-        }
-        return markup.toString();
-    }
-
-    private void renderList(Document document) {
+    private void populateList(JsonObject state) {
         List<RegistryEntityCatalog.Entry> matches = catalog.stream()
                 .filter(entry -> RegistryEntityCatalog.matches(entry, query))
                 .toList();
@@ -91,33 +101,21 @@ public final class TargetingAuiScreen extends InteractiveAuiScreen {
         int from = Math.min(matches.size(), page * PAGE_SIZE);
         int to = Math.min(matches.size(), from + PAGE_SIZE);
 
-        if (matches.isEmpty()) {
-            html(document, "target-list", "<div class=\"darwin-empty\">"
-                    + escapeHtml(tr("screen.darwin_soldier.targets.no_results")) + "</div>");
-        } else {
-            StringBuilder rows = new StringBuilder("<div class=\"table-wrap\"><table class=\"table darwin-table\"><thead><tr><th>")
-                    .append(escapeHtml(tr("screen.darwin_soldier.aui.entity"))).append("</th><th>")
-                    .append(escapeHtml(tr("screen.darwin_soldier.aui.registry_id"))).append("</th><th>")
-                    .append(escapeHtml(tr("screen.darwin_soldier.aui.action"))).append("</th></tr></thead><tbody>");
-            for (RegistryEntityCatalog.Entry entry : matches.subList(from, to)) {
-                boolean selected = SuperPerceptionTargetSettings.isWhitelisted(entry.id());
-                rows.append("<tr><td>").append(escapeHtml(entry.type().getDescription().getString()))
-                        .append("</td><td><code>").append(escapeHtml(entry.id().toString())).append("</code></td><td>")
-                        .append("<button class=\"button button-small ")
-                        .append(selected ? "button-danger" : "button-primary")
-                        .append("\" type=\"button\" data-action=\"toggle-whitelist\" data-id=\"")
-                        .append(escapeHtml(entry.id().toString())).append("\">")
-                        .append(escapeHtml(tr(selected
-                                ? "screen.darwin_soldier.targets.remove" : "screen.darwin_soldier.targets.add")))
-                        .append("</button></td></tr>");
-            }
-            rows.append("</tbody></table></div>");
-            html(document, "target-list", rows.toString());
+        JsonArray entries = new JsonArray();
+        for (RegistryEntityCatalog.Entry entry : matches.subList(from, to)) {
+            boolean selected = SuperPerceptionTargetSettings.isWhitelisted(entry.id());
+            JsonObject row = new JsonObject();
+            row.addProperty("id", entry.id().toString());
+            row.addProperty("name", entry.type().getDescription().getString());
+            row.addProperty("selected", selected);
+            row.addProperty("actionLabel", tr(selected
+                    ? "screen.darwin_soldier.targets.remove" : "screen.darwin_soldier.targets.add"));
+            entries.add(row);
         }
-        text(document, "target-page-summary", tr("screen.darwin_soldier.aui.page_summary",
-                page + 1, pageCount, matches.size()));
-        disabled(document, "target-previous", page == 0);
-        disabled(document, "target-next", page + 1 >= pageCount);
+        state.add("entries", entries);
+        state.addProperty("pageSummary", tr("screen.darwin_soldier.aui.page_summary", page + 1, pageCount, matches.size()));
+        state.addProperty("previousDisabled", page == 0);
+        state.addProperty("nextDisabled", page + 1 >= pageCount);
     }
 
     private enum Filter {
