@@ -1,0 +1,133 @@
+.ore-theme.darwin-screen {
+  width: 100%; height: 100vh; margin: 0; overflow: hidden;
+  color: var(--ore-ink); background: var(--ore-canvas); font-size: 16px;
+}
+.darwin-screen * { box-sizing: border-box; user-select: none; }
+.darwin-screen input, .darwin-screen textarea { user-select: text; }
+.ore-theme.darwin-screen,
+.ore-theme.darwin-screen * { font-weight: 700; }
+.darwin-screen .btn { margin: 0; }
+#darwin-app, .darwin-page { width: 100%; height: 100%; min-height: 0; }
+.darwin-page { display: flex; flex-direction: column; }
+.darwin-screen .darwin-header { position: relative; height: 72px; flex: 0 0 auto; }
+.darwin-screen .darwin-header .mc-header__left { display: none; }
+.darwin-screen .darwin-header .mc-header__center { justify-content: flex-start; padding-left: 24px; }
+.darwin-brand-lockup { display: flex; flex-direction: column; gap: 2px; }
+.darwin-brand-kicker { font-size: 11px; color: var(--ore-green); }
+.darwin-brand-title { font-size: 24px; line-height: 1; }
+.darwin-header .mc-header__right { width: 160px; }
+.darwin-main { width: 100%; min-height: 0; flex: 1 1 auto; overflow-x: hidden; overflow-y: auto; padding: 16px 24px; }
+.darwin-footer { flex: 0 0 auto; min-height: 64px; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 2px solid var(--ore-edge); background: var(--ore-canvas); }
+.darwin-footer > .darwin-action-row { width: 412px; flex: 0 0 412px; }
+.darwin-footer > .darwin-action-row > .mc-tooltip { flex: 0 0 200px; }
+.darwin-main > * { flex-shrink: 0; }
+.darwin-screen .mc-panel { display: flex; flex-direction: column; width: 100%; height: auto; min-width: 0; flex: 0 0 auto; }
+.darwin-screen .mc-panel__header, .darwin-screen .mc-panel__footer { width: 100%; flex: 0 0 auto; }
+.darwin-screen .mc-panel__body { display: flex; flex-direction: column; gap: 16px; flex-shrink: 0; min-width: 0; }
+.darwin-screen .mc-panel__body > * { flex-shrink: 0; }
+.darwin-screen p { margin: 0; line-height: 1.5; }
+.darwin-screen .text-muted, .darwin-field-help, .darwin-aim-weapon-id { color: var(--ore-ink-muted); }
+.darwin-empty { padding: 28px; text-align: center; color: var(--ore-ink-muted); }
+.darwin-save-notice { color: var(--ore-success); margin-bottom: 12px !important; }
+.darwin-status-strip { width: 100%; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin-bottom: 16px; border: 2px solid var(--ore-edge); background: var(--ore-surface-deep); }
+.darwin-status-cell { min-width: 0; min-height: 62px; padding: 9px 12px; border-right: 2px solid var(--ore-edge); display: flex; flex-direction: column; justify-content: space-between; }
+.darwin-status-cell:last-child { border-right: 0; }
+.darwin-status-label { color: var(--ore-ink-muted); font-size: 12px; }
+.darwin-status-value { font-size: 19px; line-height: 1; }
+.darwin-growth-workspace { display: grid; grid-template-columns: minmax(420px, 38fr) minmax(640px, 62fr); gap: 24px; align-items: start; }
+.darwin-config-layout { display: flex; gap: 16px; align-items: flex-start; }
+.darwin-target-layout { display: flex; flex-direction: column; gap: 16px; }
+.darwin-growth-workspace > .darwin-growth-left { width: auto; min-width: 0; }
+.darwin-ability-workspace { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.darwin-fields { display: flex; flex-direction: column; gap: 8px; }
+
+
+.darwin-growth-left .darwin-range .mc-slider { margin: 4px 0; }
+.darwin-allocation-row { min-width: 0; padding: 6px 0 10px; border-bottom: 2px solid var(--ore-edge); }
+.darwin-allocation-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.darwin-allocation-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.darwin-stepper { display: flex; align-items: center; gap: 3px; flex: 0 0 auto; }
+.darwin-screen .darwin-stepper > .mc-tooltip { flex: 0 0 34px; width: 34px; }
+.darwin-screen .darwin-stepper .mc-button { min-width: 34px; width: 34px; padding-left: 0; padding-right: 0; }
+.darwin-step-value { width: 88px; min-width: 46px; min-height: 32px; text-align: center; display: flex; align-items: center; justify-content: center; }
+.darwin-range { width: 100%; }
+
+.darwin-skill-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.darwin-screen .darwin-ability-tab { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; justify-self: stretch; min-width: 0; width: auto; height: auto; min-height: 126px; white-space: normal; }
+.darwin-screen .darwin-ability-tab > .mc-button { width: 100%; height: 100%; min-height: 126px; padding: 10px 8px; white-space: normal; }
+.darwin-screen .darwin-ability-tab .mc-button__content { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; min-width: 0; white-space: normal; }
+.darwin-skill-icon { width: 44px; height: 44px; flex: 0 0 auto; }
+.darwin-ability-title { width: 100%; min-width: 0; font-size: 14px; text-align: center; line-height: 1.3; white-space: normal; overflow-wrap: anywhere; }
+.darwin-ability-progress-text { font-size: 12px; white-space: normal; }
+.darwin-screen .darwin-ability-tab .mc-progress { width: 100%; min-width: 0; }
+.darwin-screen .darwin-ability-tab .mc-progress__track { height: 18px; }
+.darwin-ability-line { line-height: 1.5; overflow-wrap: anywhere; }
+.darwin-action-row, .darwin-aim-controls { display: flex; gap: 12px; flex-wrap: wrap; }
+.darwin-action-row > .mc-tooltip { flex: 1 1 0; min-width: 120px; }
+.darwin-action-row > .mc-tooltip > .mc-button { width: 100%; }
+.darwin-ability-switch { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: 1 1 0; min-width: 160px; }
+.darwin-ability-switch > .mc-form-field { width: auto; flex: 0 0 auto; }
+.darwin-intel-item { color: var(--ore-ink-muted); }
+.darwin-screen .darwin-intel-card .mc-panel__body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0; }
+.darwin-intel-column { min-width: 0; }
+.darwin-intel-column:first-child { border-right: 2px solid var(--ore-edge); }
+.darwin-intel-card .darwin-intel-item { font-size: 14px; min-height: 36px; padding: 8px 10px; border-bottom: 1px solid var(--ore-edge); overflow-wrap: anywhere; }
+.darwin-config-layout > .darwin-category-list { flex: 0 0 280px; width: 280px; }
+.darwin-screen .darwin-category { width: 100%; white-space: normal; height: auto; min-height: 40px; }
+.darwin-screen .darwin-category .mc-button { width: 100%; height: auto; white-space: normal; }
+.darwin-screen .darwin-category .mc-button__content { white-space: normal; }
+.darwin-category-list .mc-panel__body { gap: 10px; }
+.darwin-config-layout > .darwin-config-content { flex: 1 1 0; width: 0; }
+.darwin-form-row { display: flex; flex-direction: column; gap: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--ore-edge); }
+.darwin-field-label { overflow-wrap: anywhere; }
+.darwin-field-help { line-height: 1.5; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.darwin-field-error, .darwin-config-error { color: var(--ore-danger); }
+.darwin-config-error { margin-bottom: 16px; }
+.darwin-config-input { width: 100%; }
+.darwin-config-input.is-invalid { outline: 2px solid var(--ore-danger); }
+.darwin-aim-content { width: 100%; }
+.darwin-aim-content .mc-panel__body { gap: 24px; }
+.darwin-aim-weapon-id, .darwin-aim-ballistics { overflow-wrap: anywhere; }
+.darwin-target-layout > .target-filters { width: 100%; }
+.darwin-screen .target-filters .mc-panel__body { display: flex; flex-direction: row; flex-wrap: wrap; gap: 24px; }
+.darwin-target-layout > .target-list { width: 100%; }
+.darwin-filter-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.darwin-filter-row > span { flex: 1 1 0; min-width: 0; }
+.darwin-filter-row > .mc-form-field { width: auto; flex: 0 0 auto; }
+.darwin-search { display: flex; flex-direction: column; gap: 10px; }
+.darwin-data-table { width: 100%; display: block; }
+.darwin-data-table thead, .darwin-data-table tbody { display: block; }
+.darwin-data-table tr { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) minmax(108px, 1fr); gap: 12px; align-items: center; border-bottom: 1px solid var(--ore-edge); padding: 12px 0; }
+.darwin-data-table th, .darwin-data-table td { display: block; min-width: 0; text-align: left; overflow-wrap: anywhere; line-height: 1.5; }
+.darwin-data-table th { color: var(--ore-ink-muted); font-size: 14px; }
+.darwin-data-table code { color: var(--ore-ink-muted); font-size: 12px; white-space: normal; }
+.darwin-adaptation-table tr { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) minmax(82px, 1fr) minmax(108px, 1fr); }
+.darwin-pagination-summary { color: var(--ore-ink-muted); }
+@media (max-width: 900px) {
+  .darwin-growth-workspace { grid-template-columns: minmax(0, 1fr); }
+  .darwin-config-layout { flex-direction: column; }
+  .darwin-skill-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .darwin-screen .darwin-intel-card .mc-panel__body { grid-template-columns: minmax(0, 1fr); }
+  .darwin-growth-workspace > .darwin-growth-left, .darwin-config-layout > .darwin-category-list,
+  .darwin-target-layout > .target-filters, .darwin-config-layout > .darwin-config-content,
+  .darwin-target-layout > .target-list { width: 100%; flex: 0 0 auto; }
+  .darwin-ability-workspace { width: 100%; }
+  .darwin-main { padding: 16px; }
+  .darwin-status-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+}
+
+.darwin-growth-screen .mc-header__right { width: 340px; display: flex; align-items: center; gap: 16px; }
+.darwin-header-status { font-size: 14px; color: var(--ore-green); }
+
+.darwin-screen .mc-panel__header { min-height: 46px; }
+.darwin-screen .mc-panel__title { font-size: 18px; }
+.darwin-screen .darwin-growth-left .mc-panel__footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.darwin-ability-detail-shell { min-height: 190px; padding: 16px; border: 2px solid var(--ore-edge); background: var(--ore-canvas); }
+.darwin-ability-copy { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.darwin-ability-copy > p { width: 100%; min-width: 0; white-space: normal; padding: 8px 10px; border-bottom: 1px solid var(--ore-edge); }
+.darwin-ability-copy > .darwin-action-row { grid-column: 1 / -1; }
+@media (max-width: 560px) {
+  .darwin-skill-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .darwin-status-strip, .darwin-ability-copy { grid-template-columns: minmax(0, 1fr); }
+}

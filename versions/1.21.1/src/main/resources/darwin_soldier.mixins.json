@@ -1,0 +1,25 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.kltyton.darwin_soldier.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "PlayerFoodMixin",
+    "LegendarySurvivalThirstMixin",
+    "ThirstWasTakenDrinkByHandMixin",
+    "ThirstWasTakenMixin",
+    "PlayerCanEatMixin"
+  ],
+  "client": [
+    "client.ThirstBarRendererMixin",
+    "client.PlayerRendererMixin",
+    "client.MinecraftMixin",
+    "client.MouseHandlerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

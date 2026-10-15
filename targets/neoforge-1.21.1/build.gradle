@@ -1,0 +1,132 @@
+plugins {
+    id 'me.modmuss50.mod-publish-plugin' version '2.1.1'
+    id 'java-library'
+    id 'idea'
+    id 'net.neoforged.moddev' version '2.0.144'
+}
+
+apply from: file('../../gradle/target-conventions/base.gradle')
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+}
+
+neoForge {
+    version = neo_version
+
+    parchment {
+        minecraftVersion = parchment_minecraft_version
+        mappingsVersion = parchment_mappings_version
+    }
+
+    runs {
+        client {
+            client()
+            gameDirectory = file('run')
+            systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+        }
+        server {
+            server()
+            gameDirectory = file('run-server')
+            programArgument '--nogui'
+            systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+        }
+        gameTestServer {
+            type = 'gameTestServer'
+            systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+        }
+        data {
+            data()
+            gameDirectory = file('run-data')
+            programArguments.addAll '--mod', mod_id, '--all', '--output', file('src/generated/resources/').absolutePath,
+                    *project.ext.templeDatagenExistingArgs
+        }
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+
+    unitTest {
+        enable()
+        testedMod = mods."${mod_id}"
+    }
+}
+
+
+
+repositories {
+    mavenCentral()
+    // Resolve the bundled KltytonUI build from the target-local library directory.
+    exclusiveContent {
+        forRepository {
+            flatDir {
+                dirs 'libs/kui'
+            }
+        }
+        filter {
+            includeModule 'io.github.kltyton.kltytonui', 'KltytonUI-neoforge-1.21.1'
+        }
+    }
+    maven {
+        name = 'CurseMaven'
+        url = 'https://cursemaven.com'
+        content { includeGroup 'curse.maven' }
+    }
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
+    maven { url = 'https://maven.kosmx.dev/' }
+    maven { url = 'https://maven.shedaniel.me/' }
+    maven { url = 'https://maven.sighs.cc/repository/maven-public/' }
+    maven { url = 'https://maven.latvian.dev/releases' }
+}
+
+dependencies {
+    implementation "maven.modrinth:better-combat:${better_combat_version}"
+    implementation "dev.kosmx.player-anim:player-animation-lib-forge:${player_animation_version}"
+    runtimeOnly "me.shedaniel.cloth:cloth-config-neoforge:${cloth_config_version}"
+    implementation "curse.maven:legendary-survival-overhaul-840254:${legendary_survival_file_id}"
+    implementation "curse.maven:thirst-was-taken-679270:${thirst_was_taken_file_id}"
+    implementation "curse.maven:tacz-1-21-1-1353462:${tacz_file_id}"
+
+    implementation "io.github.kltyton.kltytonui:KltytonUI-neoforge-1.21.1:${kltytonui_version}"
+    jarJar "io.github.kltyton.kltytonui:KltytonUI-neoforge-1.21.1:${kltytonui_version}"
+    implementation "dev.latvian.mods:rhino:${rhino_version}"
+    jarJar "dev.latvian.mods:rhino:${rhino_version}"
+
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test', Test).configure {
+    useJUnitPlatform()
+}
+
+tasks.named('jar', Jar).configure {
+    manifest {
+        attributes(["Specification-Title"     : mod_id,
+                    "Specification-Vendor"    : mod_authors,
+                    "Specification-Version"   : "1",
+                    "Implementation-Title"    : project.name,
+                    "Implementation-Version"  : project.jar.archiveVersion,
+                    "Implementation-Vendor"   : mod_authors,
+                    "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")])
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+}
+
+apply from: file('../../gradle/target-conventions/publish.gradle')

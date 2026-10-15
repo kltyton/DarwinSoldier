@@ -1,3 +1,38 @@
-Darwin Soldier is an infinite progression mod for Minecraft Forge 1.20.1. Activate the system with Darwin Serum, earn Growth by defeating creatures and bosses, and convert that Growth into permanent attribute points for Health, Attack, Defense, Perception, and Nutrition. Each path improves your combat or survival capabilities and unlocks new abilities as you progress.
-Build around seven distinct abilities: adapt to enemies that defeat you, empower your next melee strike with Hunting Instinct, purge harmful effects with Stress Evolution, track targets and preview projectile trajectories with Super Perception, evade and counter attacks with Battle Instinct, turn nutrition into healing through Efficient Metabolism, and gain bonuses when fully fed through Nutrition Fullness.
-Progress is stored server-side for each player, making Darwin Soldier suitable for single-player worlds, LAN games, and dedicated multiplayer servers. Its in-game interfaces let players allocate points, manage abilities and adaptation records, configure target filters, and tune aiming behavior for individual weapons.
+# Darwin Soldier
+
+Grow stronger through combat, allocate permanent attributes, and unlock adaptive survival, targeting, and battle abilities. Darwin Serum enables persistent progression with five attribute paths and seven active or passive abilities. Player data, damage rules and ability state are controlled by the server.
+
+## Supported targets
+
+| Minecraft | Loader | Java |
+| --- | --- | --- |
+| 1.20.1 | Forge 47.4.20+ | 17 |
+| 1.21.1 | NeoForge 21.1.248+ | 21 |
+
+KltytonUI 1.2.7 and Rhino are bundled. Better Combat, Thirst Was Taken, Legendary Survival Overhaul and the matching TaCZ build are optional integrations.
+
+## Development
+
+The project uses [KltytonTemple](https://github.com/kltyton/KltytonTemple). Shared gameplay, data and UI code live in `common`; Minecraft API differences live in `versions`; Loader entry points, events, configuration and networking adapters live in `loaders`. Each target retains its own Wrapper, mapping and dependency pins.
+
+```mermaid
+flowchart LR
+    C[common: gameplay and UI] --> F[Forge 1.20.1]
+    C --> N[NeoForge 1.21.1]
+    V[version API adapters] --> F
+    V --> N
+    L[Loader integration] --> F
+    L --> N
+```
+
+Use Java 21 for the root Gradle controller. The target toolchains compile game code for Java 17 and Java 21 respectively.
+
+```sh
+./gradlew build_forge_1_20_1
+./gradlew build_neoforge_1_21_1
+./gradlew buildAllTargets
+```
+
+On Windows use `.\gradlew.bat`. Release JARs are written to each target's `build/libs` directory. `runClient_forge_1_20_1` and `runClient_neoforge_1_21_1` select the development client; `runDatagen_<target>` updates that target's generated resources. Handwritten assets remain in their source layers.
+
+The template build controller retains its MIT notice in `LICENSES/KltytonTemple-MIT.txt`. Game code remains licensed under LGPLv3.
