@@ -9,6 +9,7 @@
 /.temple/
 /bin/
 /logs/
+**/logs/
 /run/
 /run-data/
 **/build/
